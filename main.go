@@ -2,10 +2,17 @@ package main
 import(
 	"fmt"
 	"os"
+	"time"
+	//"io"
+	"log"
 	"net"
 	"flag"
 	"bytes"
+	"strings"
 	"github.com/boltdb/bolt"
+	"encoding/gob"
+	"encoding/binary"
+	"strconv"
 
 )
 //type handle func([]byte)error
@@ -13,17 +20,78 @@ var (
 	traderAddr = flag.String("traddr", "/tmp/trader", "trader addr")
 	mdAddr = flag.String("mdaddr", "/tmp/market", "trader addr")
 	dbName = flag.String("db","Ins.db","db name")
-	db *bolt.DB
+	DB *bolt.DB
+	Farmat = "20060102T15:04:05"
 	//MarketRouter = map[string]handle
 )
 func init(){
 	flag.Parse()
 	var err error
-	db,err = bolt.Open(*dbName,0600,nil)
+	DB,err = bolt.Open(*dbName,0600,nil)
 	if err != nil {
 		panic(err)
 	}
 }
+
+type Candle struct{
+	ins string
+	date int64
+	Ask float64
+	Bid float64
+}
+func (self *Candle) encode() ([]byte,error) {
+	var buf bytes.Buffer
+	err := gob.NewEncoder(&buf).Encode(self)
+	return buf.Bytes(),err
+}
+
+func (self *Candle)decode(data []byte) error {
+	return gob.NewDecoder(bytes.NewBuffer(data)).Decode(self)
+}
+func (self *Candle) load(db string)(err error){
+	db_ := strings.Split(db,",")
+	//fmt.Println(db_)
+	self.ins = db_[0]
+	d,err := time.Parse(Farmat,db_[1])
+	if err != nil {
+		return err
+	}
+	self.date = d.Unix()
+	if len(db_[2])>30 || len(db_[3])>30{
+		fmt.Println(db)
+		return fmt.Errorf("too long")
+	}
+	self.Ask,err = strconv.ParseFloat(db_[2],64)
+	if err != nil {
+		return err
+	}
+	self.Bid,err = strconv.ParseFloat(db_[2],64)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+
+
+func (self *Candle) toSave(db *bolt.DB)error{
+	return db.Batch(func(t *bolt.Tx)error{
+		b,err := t.CreateBucketIfNotExists([]byte(self.ins))
+		if err != nil {
+			return err
+		}
+		k := make([]byte,8)
+		binary.BigEndian.PutUint64(k,uint64(self.date))
+		v,err := self.encode()
+		if err != nil {
+			return err
+		}
+		//fmt.Println(k)
+		return b.Put(k,v)
+	})
+
+}
+
 
 func main(){
 	fmt.Println("start")
@@ -34,8 +102,8 @@ func main(){
 
 
 func RouterTrader(db []byte){
-	dbs := bytes.Split(db,[]byte{':'})
-	switch(string(dbs[0])){
+	dbs := strings.Split(string(db)," ")
+	switch(dbs[0]){
 	case "ins":
 		err := UnixSend(*mdAddr,db)
 		if err != nil {
@@ -46,8 +114,22 @@ func RouterTrader(db []byte){
 	}
 }
 func RouterMarket(db []byte){
-	dbs := bytes.Split(db,[]byte{':'})
-	switch(string(dbs[0])){
+	dbs := strings.Split(string(db)," ")
+	//fmt.Println(dbs)
+	switch(dbs[0]){
+	case "market":
+		c := &Candle{}
+		err := c.load(dbs[1])
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		err = c.toSave(DB)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
 	default:
 		fmt.Println(string(db))
 	}
@@ -80,13 +162,13 @@ func UnixServer(local string,hand func([]byte)){
 		fmt.Println(err)
 		return
 	}
-	var buf [1024]byte
 	for{
+		var buf [1024]byte
 		n,_,err := ln.ReadFromUnix(buf[:])
 		if err != nil {
 			panic(err)
 		}
-		hand(buf[:n])
+		go hand(buf[:n])
 		//fmt.Println(string(buf[:n]),raddr)
 
 	}

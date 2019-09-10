@@ -30,7 +30,7 @@ void MarketSpi::routeHand(const char * data){
 
     cout<<"db:"<<db<<endl;
     char *p;
-    char sep[] = ":";
+    char sep[] = " ";
     char str[2][1024];
     p = strtok(db,sep);
     int i;
@@ -92,5 +92,21 @@ void MarketSpi::OnRspSubMarketData(
 }
 
 void MarketSpi::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData){
-    //pDepthMarketData
+    //printf("%s %s %d %lf %lf\n",
+    //       pDepthMarketData->InstrumentID,
+    //       pDepthMarketData->UpdateTime,
+    //       pDepthMarketData->UpdateMillisec,
+    //       pDepthMarketData->AskPrice1,
+    //       pDepthMarketData->BidPrice1
+    //       );
+    char str[1024];
+    sprintf(str,"market %s,%sT%s,%lf,%lf",
+           pDepthMarketData->InstrumentID,
+           pDepthMarketData->TradingDay,
+           pDepthMarketData->UpdateTime,
+           pDepthMarketData->AskPrice1,
+           pDepthMarketData->BidPrice1
+            );
+    //cout<<str<<endl;
+    this->send(str);
 }

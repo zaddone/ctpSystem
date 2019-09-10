@@ -26,6 +26,7 @@ private:
     int requestID;
     CThostFtdcReqUserLoginField userReq;
     void queryInstruments();
+    bool queryIns;
 };
 
 #endif // TRADERSPI_H

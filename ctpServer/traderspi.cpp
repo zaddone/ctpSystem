@@ -38,10 +38,11 @@ void TraderSpi::OnFrontConnected(){
 
 void TraderSpi::queryInstruments()
 {
+    if (this->queryIns)return;
+    this->queryIns = true;
     CThostFtdcQryInstrumentField req;
     memset(&req, 0, sizeof(req));
-    if (!this->trApi->ReqQryInstrument(&req,this->getRequestID()))
-        cout << "query Instruments error" << endl;
+    this->trApi->ReqQryInstrument(&req,this->getRequestID());
 }
 
 void TraderSpi::OnRspQryInstrument(
@@ -52,7 +53,7 @@ void TraderSpi::OnRspQryInstrument(
 {
     //cout<< pInstrument->InstrumentName<<endl;
     //cout<< pInstrument->InstrumentID<<endl;
-    char db[16] = "ins:";
+    char db[16] = "ins ";
     strcat(db,pInstrument->InstrumentID);
     //cout<< db <<endl;
     this->send(db);
