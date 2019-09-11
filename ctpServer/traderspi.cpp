@@ -9,9 +9,9 @@ TraderSpi::TraderSpi(CThostFtdcReqUserLoginField *user,const char * path):socket
 {
 
     //socketUnixServer::socketUnixServer(path);
-    if (0 != access(path,0)){
-        mkdir(path,0777);
-    }
+    //if (0 != access(path,0)){
+    // 	  mkdir(path,0777);
+    //}
     this->trApi = CThostFtdcTraderApi::CreateFtdcTraderApi(path);
     this->trApi->RegisterSpi(this);
     //strcpy(&this->userReq,user);

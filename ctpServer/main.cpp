@@ -11,7 +11,6 @@ int main(int argc, char *argv[])
     //for (int i=1;i<argc;i++){
     //    cout <<argv[i]<< endl;
     //}
-
     ctpspi ctp(argv[1],argv[2],argv[3]);
     thread th3(&ctpspi::runMarket,&ctp,argv[5]);
     thread th4(&ctpspi::runTrader,&ctp,argv[4]);
