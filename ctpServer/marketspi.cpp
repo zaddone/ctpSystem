@@ -107,6 +107,6 @@ void MarketSpi::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarke
            pDepthMarketData->AskPrice1,
            pDepthMarketData->BidPrice1
             );
-    cout<<str<<endl;
+    //cout<<str<<endl;
     this->send(str);
 }
