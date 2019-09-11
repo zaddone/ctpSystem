@@ -50,7 +50,6 @@ func (self *Candle)decode(data []byte) error {
 }
 func (self *Candle) load(db string)(err error){
 	db_ := strings.Split(db,",")
-	//fmt.Println(db_)
 	self.ins = db_[0]
 	d,err := time.Parse(Farmat,db_[1])
 	if err != nil {
@@ -58,9 +57,11 @@ func (self *Candle) load(db string)(err error){
 	}
 	self.date = d.Unix()
 	if len(db_[2])>30 || len(db_[3])>30{
-		fmt.Println(db)
+		//fmt.Println(db)
 		return fmt.Errorf("too long")
 	}
+
+	fmt.Println(db_)
 	self.Ask,err = strconv.ParseFloat(db_[2],64)
 	if err != nil {
 		return err
