@@ -7,6 +7,21 @@
 
 //mutex mut;
 
+MarketSpi::MarketSpi(const char * path):socketUnixServer(path){
+    //if (0 != access(path,0)){
+    //    mkdir(path,0777);
+    //}
+    this->mdApi = CThostFtdcMdApi::CreateFtdcMdApi(path,true);
+    this->mdApi->RegisterSpi(this);
+    memset(&this->userReq,0,sizeof(this->userReq));
+    this->initMap();
+}
+
+void MarketSpi::OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
+
+
+}
+
 MarketSpi::MarketSpi(CThostFtdcReqUserLoginField *user,const char * path):socketUnixServer(path){
     if (0 != access(path,0)){
         mkdir(path,0777);
@@ -19,7 +34,40 @@ MarketSpi::MarketSpi(CThostFtdcReqUserLoginField *user,const char * path):socket
     strcpy(this->userReq.UserID,user->UserID);
     strcpy(this->userReq.Password,user->Password);
     //memcpy(&this->userReq,user,sizeof(user));
+    this->initMap();
+}
+void MarketSpi::setUserReg(
+        const char * brokerID,
+        const char * userID,
+        const char *password,
+        const char *passwordBak){
+    //memset(&this->userReq,0,sizeof(this->userReq));
+    strcpy(this->userReq.BrokerID,brokerID);
+    strcpy(this->userReq.UserID,userID);
+    strcpy(this->userReq.Password,password);
+    strcpy(this->pass,passwordBak);
+}
+
+void MarketSpi::swapPassword(){
+    TThostFtdcBrokerIDType bakPass;
+    strcpy(bakPass,this->userReq.Password);
+    strcpy(this->userReq.Password,this->pass);
+    strcpy(this->pass,bakPass);
+
+}
+
+void MarketSpi::run(const char *addr){
+    char _addr[1024];
+    strcpy(_addr,addr);
+    cout<<addr<<endl;
+    this->mdApi->RegisterFront(_addr);
+    this->mdApi->Init();
+    //mSpi->mdApi->Join();
+}
+void MarketSpi::initMap(){
     this->mapstring["ins"] = 1;
+    this->mapstring["config"] = 2;
+    this->mapstring["addr"] = 3;
 }
 
 void MarketSpi::routeHand(const char * data){
@@ -46,11 +94,20 @@ void MarketSpi::routeHand(const char * data){
         this->mdApi->SubscribeMarketData(ppInstrumentID,1);
     }
         break;
+    case 2:{
+        this->setUserReg(str[1],str[2],str[3],str[4]);
+        this->run(str[5]);
+    }
+        break;
+    case 3:{
+        //this->setUserReg(str[1],str[2],str[3],str[4]);
+        //this->run(str[1]);
+    }
+        break;
     default:
         printf("default %s",data);
         break;
     }
-
 
 }
 
@@ -64,6 +121,9 @@ void MarketSpi::OnFrontConnected(){
     cout << res << endl;
 }
 
+void MarketSpi::OnFrontDisconnected(int nReason){
+    //this->send("addr");
+}
 void MarketSpi::OnRspUserLogin(
         CThostFtdcRspUserLoginField *pRspUserLogin,
         CThostFtdcRspInfoField *pRspInfo,

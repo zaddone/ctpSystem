@@ -16,6 +16,8 @@ int main(int argc, char *argv[])
     thread th4(&ctpspi::runTrader,&ctp,argv[4]);
     thread th1(&ctpspi::runMRecv,&ctp);
     thread th2(&ctpspi::runTRecv,&ctp);
+    ctp.mSpi->ReqConfig();
+    ctp.tSpi->ReqConfig();
     //cout << "4" << endl;
     th1.join();
     th2.join();

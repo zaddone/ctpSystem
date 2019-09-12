@@ -56,3 +56,6 @@ void socketUnixServer::receive(){
 
     close(sock);
 }
+void socketUnixServer::ReqConfig(){
+    this->send("config");
+}

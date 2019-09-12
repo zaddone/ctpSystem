@@ -8,10 +8,13 @@ using namespace std;
 class MarketSpi : public socketUnixServer,CThostFtdcMdSpi
 {
 public:
+    MarketSpi(const char *path);
     MarketSpi(CThostFtdcReqUserLoginField *user, const char *path);
     CThostFtdcMdApi *mdApi;
     virtual void routeHand(const char *data);
     int getRequestID();
+    void run(const char *addr);
+    virtual void OnFrontDisconnected(int nReason);
     virtual void OnFrontConnected();
     virtual void OnRspUserLogin(
         CThostFtdcRspUserLoginField *pRspUserLogin,
@@ -29,12 +32,20 @@ public:
             int nRequestID,
             bool bIsLast);
     virtual void OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData);
-
+    virtual void OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) ;
 
 private:
+    void swapPassword();
+    TThostFtdcPasswordType pass;
     int requestID;
     CThostFtdcReqUserLoginField userReq;
     map<string , int >mapstring;
+    void initMap();
+    void setUserReg(
+        const char * brokerID,
+        const char * userID,
+        const char * password,
+        const char * passwordBak);
 
 };
 

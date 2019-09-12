@@ -4,6 +4,11 @@
 #include <thread>
 using namespace std;
 
+ctpspi::ctpspi()
+{
+
+}
+
 ctpspi::ctpspi(const char *BrokerID, const char *UserID, const char *Password)
 {
     memset(&this->UserReq,0,sizeof(this->UserReq));

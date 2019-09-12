@@ -2,27 +2,22 @@ package main
 import(
 	"fmt"
 	"os"
-	"time"
-	//"io"
 	"log"
 	"net"
 	"flag"
-	"bytes"
+	"time"
 	"strings"
 	"github.com/boltdb/bolt"
-	"encoding/gob"
-	"encoding/binary"
-	"strconv"
-
+	"github.com/zaddone/ctpSystem/cache"
+	"github.com/zaddone/ctpSystem/config"
 )
-//type handle func([]byte)error
 var (
 	traderAddr = flag.String("traddr", "/tmp/trader", "trader addr")
 	mdAddr = flag.String("mdaddr", "/tmp/market", "trader addr")
 	dbName = flag.String("db","Ins.db","db name")
 	DB *bolt.DB
-	Farmat = "20060102T15:04:05"
-	//MarketRouter = map[string]handle
+	//Farmat = "20060102T15:04:05"
+	Cache = cache.NewCache()
 )
 func init(){
 	flag.Parse()
@@ -33,69 +28,12 @@ func init(){
 	}
 }
 
-type Candle struct{
-	ins string
-	date int64
-	Ask float64
-	Bid float64
-}
-func (self *Candle) encode() ([]byte,error) {
-	var buf bytes.Buffer
-	err := gob.NewEncoder(&buf).Encode(self)
-	return buf.Bytes(),err
-}
-
-func (self *Candle)decode(data []byte) error {
-	return gob.NewDecoder(bytes.NewBuffer(data)).Decode(self)
-}
-func (self *Candle) load(db string)(err error){
-	db_ := strings.Split(db,",")
-	self.ins = db_[0]
-	d,err := time.Parse(Farmat,db_[1])
-	if err != nil {
-		return err
-	}
-	self.date = d.Unix()
-	if len(db_[2])>30 || len(db_[3])>30{
-		//fmt.Println(db)
-		return fmt.Errorf("too long")
-	}
-
-	fmt.Println(db_)
-	self.Ask,err = strconv.ParseFloat(db_[2],64)
-	if err != nil {
-		return err
-	}
-	self.Bid,err = strconv.ParseFloat(db_[2],64)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-
-
-func (self *Candle) toSave(db *bolt.DB)error{
-	return db.Batch(func(t *bolt.Tx)error{
-		b,err := t.CreateBucketIfNotExists([]byte(self.ins))
-		if err != nil {
-			return err
-		}
-		k := make([]byte,8)
-		binary.BigEndian.PutUint64(k,uint64(self.date))
-		v,err := self.encode()
-		if err != nil {
-			return err
-		}
-		//fmt.Println(k)
-		return b.Put(k,v)
-	})
-
-}
-
-
 func main(){
 	fmt.Println("start")
+
+	taddr := getAddr(config.Conf.Taddr)
+	maddr := getAddr(config.Conf.Maddr)
+	fmt.Println(taddr,maddr)
 	go UnixServer(*traderAddr,RouterTrader)
 	go UnixServer(*mdAddr,RouterMarket)
 	select{}
@@ -110,6 +48,36 @@ func RouterTrader(db []byte){
 		if err != nil {
 			panic(err)
 		}
+
+
+	case "addr":
+		addr := getAddr(config.Conf.Taddr)
+		if len(addr) ==0 {
+			return
+		}
+		err := UnixSend(*traderAddr,[]byte(addr))
+		if err != nil {
+			panic(err)
+		}
+	case "config":
+		addr := getAddr(config.Conf.Taddr)
+		if len(addr) ==0 {
+			return
+		}
+		str := fmt.Sprintf(
+			"config %s %s %s %s %s",
+			config.Conf.BrokerID,
+			config.Conf.UserID,
+			config.Conf.Password,
+			config.Conf.PasswordBak,
+			addr,
+		)
+		fmt.Println(str)
+		err := UnixSend(*traderAddr,[]byte(str))
+		if err != nil {
+			panic(err)
+		}
+
 	default:
 		fmt.Println(string(db))
 	}
@@ -119,23 +87,43 @@ func RouterMarket(db []byte){
 	//fmt.Println(dbs)
 	switch(dbs[0]){
 	case "market":
-		c := &Candle{}
-		err := c.load(dbs[1])
+		c := &cache.Candle{}
+		err := c.Load(dbs[1])
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		err = c.toSave(DB)
-		if err != nil {
-			log.Println(err)
+		Cache.Add(c)
+	case "addr":
+		addr := getAddr(config.Conf.Maddr)
+		if len(addr) ==0 {
 			return
 		}
-
+		err := UnixSend(*mdAddr,[]byte(addr))
+		if err != nil {
+			panic(err)
+		}
+	case "config":
+		addr := getAddr(config.Conf.Maddr)
+		if len(addr) ==0 {
+			return
+		}
+		str := fmt.Sprintf(
+			"config %s %s %s %s %s",
+			config.Conf.BrokerID,
+			config.Conf.UserID,
+			config.Conf.Password,
+			config.Conf.PasswordBak,
+			addr,
+		)
+		err := UnixSend(*mdAddr,[]byte(str))
+		if err != nil {
+			panic(err)
+		}
 	default:
 		fmt.Println(string(db))
 	}
 }
-
 func UnixSend(raddr string,db []byte) error {
 	rAddr, err := net.ResolveUnixAddr("unixgram",raddr +"_")
 	if err != nil {
@@ -176,3 +164,38 @@ func UnixServer(local string,hand func([]byte)){
 	ln.Close()
 }
 
+func checkTcp(addr string) (error,int64) {
+
+	b := time.Now().UnixNano()
+	ad := strings.Split(addr,"://")
+	fmt.Println(ad)
+	hawkServer,err := net.ResolveTCPAddr("tcp", ad[1])
+	if err != nil {
+		return err,0
+	}
+	c,err := net.DialTCP("tcp",nil,hawkServer)
+	if err != nil {
+		return err,0
+	}
+	defer c.Close()
+	return nil,time.Now().UnixNano() - b
+
+}
+func getAddr(addrs []string) (addr string) {
+
+	var min int64
+	for _,a_ := range addrs {
+		err,d := checkTcp(a_)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		fmt.Println(a_,d)
+		if min==0 {
+			addr=a_
+			min = d
+		}
+	}
+	return
+
+}

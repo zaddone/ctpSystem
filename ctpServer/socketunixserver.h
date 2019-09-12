@@ -9,7 +9,7 @@ public:
     void send(const char * data);
     void receive();
     virtual void routeHand(const char *data)=0;
-
+    void ReqConfig();
 
 private:
     char * path;
