@@ -35,12 +35,14 @@ public:
     virtual void OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) ;
 
 private:
+    char * Addr;
     void swapPassword();
     TThostFtdcPasswordType pass;
     int requestID;
     CThostFtdcReqUserLoginField userReq;
     map<string , int >mapstring;
     void initMap();
+    void Join();
     void setUserReg(
         const char * brokerID,
         const char * userID,

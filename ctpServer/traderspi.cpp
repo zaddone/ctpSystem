@@ -2,9 +2,21 @@
 #include "traderspi.h"
 #include <unistd.h>
 #include <sys/stat.h>
+#include <thread>
 //#include <string.h>
 
 using namespace std;
+
+TraderSpi::TraderSpi(const char * path):socketUnixServer(path){
+    //if (0 != access(path,0)){
+    //    mkdir(path,0777);
+    //}
+    this->trApi = CThostFtdcTraderApi::CreateFtdcTraderApi(path);
+    //this->trApi = CThostFtdcMdApi::CreateFtdcMdApi(path,true);
+    this->trApi->RegisterSpi(this);
+    memset(&this->userReq,0,sizeof(this->userReq));
+    this->initMap();
+}
 TraderSpi::TraderSpi(CThostFtdcReqUserLoginField *user,const char * path):socketUnixServer(path)
 {
 
@@ -29,10 +41,10 @@ void TraderSpi::routeHand(const char *data){
     cout<<"trader:"<<data<<endl;
     char db[1024];
     strcpy(db,data);
-    cout<<"db:"<<db<<endl;
+    //cout<<"db:"<<db<<endl;
     char *p;
     char sep[] = " ";
-    char str[2][1024];
+    char str[100][1024];
     p = strtok(db,sep);
     int i;
     i = 0;
@@ -59,6 +71,10 @@ void TraderSpi::routeHand(const char *data){
     }
 
 
+}
+void TraderSpi::Join(){
+    this->trApi->Join();
+    this->send("addr");
 }
 int TraderSpi::getRequestID(){
     this->requestID++;
@@ -156,6 +172,8 @@ void TraderSpi::run(const char *addr){
     cout<<addr<<endl;
     this->trApi->RegisterFront(_addr);
     this->trApi->Init();
+    thread th(&TraderSpi::Join,this);
+    th.detach();
     //mSpi->mdApi->Join();
 }
 void TraderSpi::initMap(){

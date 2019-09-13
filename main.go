@@ -31,9 +31,9 @@ func init(){
 func main(){
 	fmt.Println("start")
 
-	taddr := getAddr(config.Conf.Taddr)
-	maddr := getAddr(config.Conf.Maddr)
-	fmt.Println(taddr,maddr)
+	//taddr := getAddr(config.Conf.Taddr)
+	//maddr := getAddr(config.Conf.Maddr)
+	//fmt.Println(taddr,maddr)
 	go UnixServer(*traderAddr,RouterTrader)
 	go UnixServer(*mdAddr,RouterMarket)
 	select{}
@@ -41,7 +41,9 @@ func main(){
 
 
 func RouterTrader(db []byte){
+	//fmt.Println(string(db))
 	dbs := strings.Split(string(db)," ")
+	fmt.Println(dbs)
 	switch(dbs[0]){
 	case "ins":
 		err := UnixSend(*mdAddr,db)

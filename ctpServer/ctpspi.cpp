@@ -6,9 +6,16 @@ using namespace std;
 
 ctpspi::ctpspi()
 {
-
+    this->mSpi = new MarketSpi("market");
+    this->tSpi = new TraderSpi("trader");
 }
 
+void ctpspi::getConfigM(){
+    this->mSpi->ReqConfig();
+}
+void ctpspi::getConfigT(){
+    this->tSpi->ReqConfig();
+}
 ctpspi::ctpspi(const char *BrokerID, const char *UserID, const char *Password)
 {
     memset(&this->UserReq,0,sizeof(this->UserReq));

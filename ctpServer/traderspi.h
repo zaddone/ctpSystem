@@ -8,6 +8,7 @@ using namespace std;
 class TraderSpi:public socketUnixServer,CThostFtdcTraderSpi
 {
 public:
+    TraderSpi(const char* path);
     TraderSpi(CThostFtdcReqUserLoginField *user,const char* path);
     CThostFtdcTraderApi *trApi;
     virtual void routeHand(const char *data);
@@ -32,6 +33,7 @@ private:
     CThostFtdcReqUserLoginField userReq;
     map<string , int >mapstring;
     void initMap();
+    void Join();
     void setUserReg(
         const char * brokerID,
         const char * userID,

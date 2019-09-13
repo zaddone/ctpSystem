@@ -14,11 +14,13 @@ public:
     void runMarket(const char *addr);
     void runMRecv();
     void runTRecv();
-    MarketSpi * mSpi;
-    TraderSpi * tSpi;
+    void getConfigM();
+    void getConfigT();
 
 private:
     CThostFtdcReqUserLoginField UserReq;
+    MarketSpi * mSpi;
+    TraderSpi * tSpi;
 
 };
 

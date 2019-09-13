@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 //#include <stdio.h>
 #include "marketspi.h"
+#include <thread>
 //#include <mutex>
 
 //mutex mut;
@@ -19,7 +20,7 @@ MarketSpi::MarketSpi(const char * path):socketUnixServer(path){
 
 void MarketSpi::OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) {
 
-
+    cout<<pRspInfo->ErrorID <<pRspInfo->ErrorMsg;
 }
 
 MarketSpi::MarketSpi(CThostFtdcReqUserLoginField *user,const char * path):socketUnixServer(path){
@@ -55,13 +56,21 @@ void MarketSpi::swapPassword(){
     strcpy(this->pass,bakPass);
 
 }
+void MarketSpi::Join(){
+    this->mdApi->Join();
+    this->send("addr");
+}
 
 void MarketSpi::run(const char *addr){
+    //char _addr[1024];
+    //memset(this->Addr,0,strlen(addr));
     char _addr[1024];
     strcpy(_addr,addr);
     cout<<addr<<endl;
     this->mdApi->RegisterFront(_addr);
     this->mdApi->Init();
+    thread th(&MarketSpi::Join,this);
+    th.detach();
     //mSpi->mdApi->Join();
 }
 void MarketSpi::initMap(){
@@ -76,10 +85,9 @@ void MarketSpi::routeHand(const char * data){
     char db[1024];
     strcpy(db,data);
 
-    cout<<"db:"<<db<<endl;
     char *p;
     char sep[] = " ";
-    char str[2][1024];
+    char str[100][1024];
     p = strtok(db,sep);
     int i;
     i = 0;
@@ -95,13 +103,15 @@ void MarketSpi::routeHand(const char * data){
     }
         break;
     case 2:{
+
+        cout<<"db:"<<str[1]<<str[2]<<str[3]<<str[4]<<endl;
         this->setUserReg(str[1],str[2],str[3],str[4]);
         this->run(str[5]);
     }
         break;
     case 3:{
         //this->setUserReg(str[1],str[2],str[3],str[4]);
-        //this->run(str[1]);
+        this->run(str[1]);
     }
         break;
     default:
