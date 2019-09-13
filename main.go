@@ -46,7 +46,14 @@ func RouterTrader(db []byte){
 	fmt.Println(dbs)
 	switch(dbs[0]){
 	case "ins":
-		err := UnixSend(*mdAddr,db)
+		err := DB.Batch(func(t *bolt.Tx)error{
+			_,err := t.CreateBucketIfNotExists([]byte(dbs[1]))
+			return err
+		})
+		if err != nil {
+			panic(err)
+		}
+		err = UnixSend(*mdAddr,db)
 		if err != nil {
 			panic(err)
 		}
@@ -88,6 +95,16 @@ func RouterMarket(db []byte){
 	dbs := strings.Split(string(db)," ")
 	//fmt.Println(dbs)
 	switch(dbs[0]){
+	case "ins":
+		err := DB.View(func(t *bolt.Tx)error{
+			return t.ForEach(
+				func(name []byte,b *bolt.Bucket)error{
+				return UnixSend(*mdAddr,append(append(db,' '),name...))
+			})
+		})
+		if err != nil {
+			panic(err)
+		}
 	case "market":
 		c := &cache.Candle{}
 		err := c.Load(dbs[1])
@@ -95,6 +112,7 @@ func RouterMarket(db []byte){
 			log.Println(err)
 			return
 		}
+		c.ToSave(DB)
 		Cache.Add(c)
 	case "addr":
 		addr := getAddr(config.Conf.Maddr)
@@ -136,6 +154,7 @@ func UnixSend(raddr string,db []byte) error {
 		return err
 	}
 	_,err = c.Write(db)
+	c.Close()
 	return err
 }
 func UnixServer(local string,hand func([]byte)){

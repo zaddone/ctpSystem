@@ -68,7 +68,7 @@ func (self *Candle) load(db string)(err error){
 	if err != nil {
 		return err
 	}
-	self.Bid,err = strconv.ParseFloat(db_[2],64)
+	self.Bid,err = strconv.ParseFloat(db_[3],64)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (self *Candle) load(db string)(err error){
 
 
 
-func (self *Candle) toSave(db *bolt.DB)error{
+func (self *Candle) ToSave(db *bolt.DB)error{
 	return db.Batch(func(t *bolt.Tx)error{
 		b,err := t.CreateBucketIfNotExists([]byte(self.ins))
 		if err != nil {

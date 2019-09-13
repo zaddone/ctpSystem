@@ -4,6 +4,7 @@
 //#include <stdio.h>
 #include "marketspi.h"
 #include <thread>
+#include<cmath>
 //#include <mutex>
 
 //mutex mut;
@@ -142,6 +143,9 @@ void MarketSpi::OnRspUserLogin(
 
 
     cout<<"market"<<pRspInfo->ErrorID<<endl;
+    if (0==pRspInfo->ErrorID){
+        this->send("ins");
+    }
 }
 
 void MarketSpi::OnRspUnSubMarketData(
@@ -169,7 +173,8 @@ void MarketSpi::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarke
     //       pDepthMarketData->AskPrice1,
     //       pDepthMarketData->BidPrice1
     //       );
-    char str[1024];
+
+    char str[8192];
     sprintf(str,"market %s,%sT%s,%lf,%lf",
            pDepthMarketData->InstrumentID,
            pDepthMarketData->TradingDay,
