@@ -12,13 +12,27 @@ import(
 var (
 	Farmat = "20060102T15:04:05"
 )
-
 type Candle struct{
 	ins string
 	date int64
 	Ask float64
 	Bid float64
 	v float64
+	d float64
+}
+func NewCandle(ins string,date int64,db []byte) (c *Candle) {
+	c = &Candle{
+		ins:ins,
+		date:date,
+	}
+	err := c.decode(db)
+	if err != nil {
+		panic(err)
+	}
+	return c
+}
+func (self *Candle) Each(fn func(e Element)error)error{
+	return fn(self)
 }
 func (self *Candle) Time() int64 {
 	return self.date
@@ -29,8 +43,15 @@ func (self *Candle) LastTime() int64 {
 func (self *Candle) Dur() int64 {
 	return 1
 }
+func (self *Candle) SetDiff(d float64) {
+	self.d = d
+}
 func (self *Candle) Diff() float64 {
-	return self.Ask - self.Bid
+	//if self.d == 0 {
+	//	return self.Ask - self.Bid
+	//}else{
+	return self.d
+	//}
 }
 func (self *Candle) Val() float64 {
 	if self.v == 0 {
@@ -43,7 +64,9 @@ func (self *Candle) encode() ([]byte,error) {
 	err := gob.NewEncoder(&buf).Encode(self)
 	return buf.Bytes(),err
 }
-
+func (self *Candle)Decode(data []byte) error {
+	return self.decode(data)
+}
 func (self *Candle)decode(data []byte) error {
 	return gob.NewDecoder(bytes.NewBuffer(data)).Decode(self)
 }
@@ -63,7 +86,7 @@ func (self *Candle) load(db string)(err error){
 		return fmt.Errorf("too long")
 	}
 
-	fmt.Println(db_)
+	//fmt.Println(db_)
 	self.Ask,err = strconv.ParseFloat(db_[2],64)
 	if err != nil {
 		return err
@@ -77,8 +100,6 @@ func (self *Candle) load(db string)(err error){
 	}
 	return nil
 }
-
-
 
 func (self *Candle) ToSave(db *bolt.DB)error{
 	return db.Batch(func(t *bolt.Tx)error{

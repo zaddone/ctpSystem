@@ -4,7 +4,7 @@
 //#include <stdio.h>
 #include "marketspi.h"
 #include <thread>
-#include<cmath>
+//#include<cmath>
 //#include <mutex>
 
 //mutex mut;

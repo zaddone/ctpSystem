@@ -57,8 +57,6 @@ func RouterTrader(db []byte){
 		if err != nil {
 			panic(err)
 		}
-
-
 	case "addr":
 		addr := getAddr(config.Conf.Taddr)
 		if len(addr) ==0 {
@@ -113,7 +111,7 @@ func RouterMarket(db []byte){
 			return
 		}
 		c.ToSave(DB)
-		Cache.Add(c)
+		//Cache.Add(c)
 	case "addr":
 		addr := getAddr(config.Conf.Maddr)
 		if len(addr) ==0 {
@@ -212,7 +210,7 @@ func getAddr(addrs []string) (addr string) {
 			continue
 		}
 		fmt.Println(a_,d)
-		if min==0 {
+		if min==0 || min > d {
 			addr=a_
 			min = d
 		}

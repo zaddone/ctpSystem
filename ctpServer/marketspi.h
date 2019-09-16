@@ -35,7 +35,7 @@ public:
     virtual void OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) ;
 
 private:
-    char * Addr;
+    //char * Addr;
     void swapPassword();
     TThostFtdcPasswordType pass;
     int requestID;
