@@ -3,6 +3,9 @@ import(
 	//"fmt"
 	"sync"
 )
+var (
+	Count [3]float64
+)
 type Cache struct {
 	LayerMap sync.Map
 	//BaseLayer map[string]*Layer

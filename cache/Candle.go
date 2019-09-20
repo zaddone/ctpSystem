@@ -31,6 +31,9 @@ func NewCandle(ins string,date int64,db []byte) (c *Candle) {
 	}
 	return c
 }
+func (self *Candle) Name() string{
+	return self.ins
+}
 func (self *Candle) Each(fn func(e Element)error)error{
 	return fn(self)
 }

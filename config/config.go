@@ -17,6 +17,8 @@ func init(){
 type Config struct {
 	Port string
 
+	Weight int
+
 	BrokerID string
 	UserID string
 	Password string
@@ -45,6 +47,7 @@ func NewConfig(fileName string)  *Config {
 		c.UserID = "150797"
 		c.Password = "Dimon2019"
 		c.PasswordBak = "abc2019"
+		c.Weight = 4
 		c.Taddr = []string{
 			"tcp://180.168.146.187:10100",
 			"tcp://180.168.146.187:10101",

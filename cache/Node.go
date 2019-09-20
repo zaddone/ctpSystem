@@ -1,19 +1,20 @@
 package cache
 import(
-	//"fmt"
+	"io"
 )
 type Element interface{
-	//Diff() float64
-	//SetDiff(float64)
+	Diff() float64
+	SetDiff(float64)
 	Val() float64
 	Time() int64
 	LastTime() int64
 	Dur() int64
 	Each(func(Element)error) error
+	Name() string
 }
 type Node struct {
 	Eles []Element
-	//Diff_ float64
+	Diff_ float64
 	Val_ float64
 	Time_ int64
 	LastTime_ int64
@@ -26,7 +27,7 @@ func NewNode(eles []Element) (n *Node) {
 	e:=eles[len(eles)-1]
 	n  = &Node{
 		Eles:eles,
-		//Diff_:e.Val() - b.Val(),
+		Diff_:e.Val() - b.Val(),
 		Time_ :b.Time(),
 		LastTime_:e.LastTime(),
 	}
@@ -38,6 +39,13 @@ func NewNode(eles []Element) (n *Node) {
 	return n
 }
 
+func (self *Node) Name() (n string){
+	self.Each(func(e Element)error{
+		n = e.Name()
+		return io.EOF
+	})
+	return
+}
 
 func (self *Node) Each(fn func(Element)error)error{
 
@@ -63,10 +71,9 @@ func (self *Node)LastTime() int64{
 func (self *Node)Dur() int64{
 	return self.Dur_
 }
-
-//func (self *Node) SetDiff(d float64){
-//	self.Diff_ = d
-//}
-//func (self *Node)Diff() float64 {
-//	return self.Diff_
-//}
+func (self *Node) SetDiff(d float64){
+	self.Diff_ = d
+}
+func (self *Node)Diff() float64 {
+	return self.Diff_
+}

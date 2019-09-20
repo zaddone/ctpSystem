@@ -29,11 +29,12 @@ func main(){
 		panic(err)
 	}
 	err = t.ForEach(func(name []byte,b *bolt.Bucket)error{
-		fmt.Println(string(name))
+
 		if b== nil {
 			return nil
 		}
-		return b.ForEach(func(k,v []byte)error{
+		cache.Count = [3]float64{0,0,0}
+		err := b.ForEach(func(k,v []byte)error{
 			c := cache.NewCandle(
 				string(name),
 				int64(binary.BigEndian.Uint64(k)),
@@ -46,6 +47,13 @@ func main(){
 			Cache.Add(c)
 			return nil
 		})
+		if err != nil {
+			return err
+		}
+		if cache.Count[1]+cache.Count[2]>0 {
+			fmt.Println(string(name),cache.Count,cache.Count[1]/cache.Count[2])
+		}
+		return nil
 	})
 	if err != nil {
 		panic(err)
