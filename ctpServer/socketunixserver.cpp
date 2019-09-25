@@ -53,7 +53,7 @@ void socketUnixServer::receive(){
       this->routeHand(buf);
       //printf("recv:%s\n", buf);
     }
-
+    printf("end socket server");
     close(sock);
 }
 void socketUnixServer::ReqConfig(){

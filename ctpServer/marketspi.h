@@ -9,7 +9,7 @@ class MarketSpi : public socketUnixServer,CThostFtdcMdSpi
 {
 public:
     MarketSpi(const char *path);
-    MarketSpi(CThostFtdcReqUserLoginField *user, const char *path);
+    //MarketSpi(CThostFtdcReqUserLoginField *user, const char *path);
     CThostFtdcMdApi *mdApi;
     virtual void routeHand(const char *data);
     int getRequestID();
@@ -33,6 +33,7 @@ public:
             bool bIsLast);
     virtual void OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData);
     virtual void OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast) ;
+    //virtual const char *GetTradingDay();
 
 private:
     //char * Addr;
@@ -48,6 +49,8 @@ private:
         const char * userID,
         const char * password,
         const char * passwordBak);
+    const char * path;
+    void stop();
 
 };
 

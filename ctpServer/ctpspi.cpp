@@ -16,16 +16,16 @@ void ctpspi::getConfigM(){
 void ctpspi::getConfigT(){
     this->tSpi->ReqConfig();
 }
-ctpspi::ctpspi(const char *BrokerID, const char *UserID, const char *Password)
-{
-    memset(&this->UserReq,0,sizeof(this->UserReq));
-    strcpy(this->UserReq.BrokerID,BrokerID);
-    strcpy(this->UserReq.UserID,UserID);
-    strcpy(this->UserReq.Password,Password);
-    this->mSpi = new MarketSpi(&this->UserReq,"market");
-    this->tSpi = new TraderSpi(&this->UserReq,"trader");
-
-}
+//ctpspi::ctpspi(const char *BrokerID, const char *UserID, const char *Password)
+//{
+//    memset(&this->UserReq,0,sizeof(this->UserReq));
+//    strcpy(this->UserReq.BrokerID,BrokerID);
+//    strcpy(this->UserReq.UserID,UserID);
+//    strcpy(this->UserReq.Password,Password);
+//    this->mSpi = new MarketSpi(&this->UserReq,"market");
+//    this->tSpi = new TraderSpi(&this->UserReq,"trader");
+//
+//}
 ctpspi::~ctpspi(){
     delete this->mSpi;
     delete this->tSpi;

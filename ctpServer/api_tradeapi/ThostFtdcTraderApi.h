@@ -263,7 +263,7 @@ public:
 	virtual void OnRtnTrade(CThostFtdcTradeField *pTrade) {};
 
 	///报单录入错误回报
-	virtual void OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder, CThostFtdcRspInfoField *pRspInfo) {};
+    virtual void OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder, CThostFtdcRspInfoField *pRspInfo) {};
 
 	///报单操作错误回报
 	virtual void OnErrRtnOrderAction(CThostFtdcOrderActionField *pOrderAction, CThostFtdcRspInfoField *pRspInfo) {};

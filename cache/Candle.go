@@ -98,9 +98,9 @@ func (self *Candle) load(db string)(err error){
 	if err != nil {
 		return err
 	}
-	if self.Ask == self.Bid {
-		return fmt.Errorf("ask bid is same")
-	}
+	//if self.Ask == self.Bid {
+	//	return fmt.Errorf("ask bid is same")
+	//}
 	return nil
 }
 

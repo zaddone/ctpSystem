@@ -13,8 +13,8 @@ MarketSpi::MarketSpi(const char * path):socketUnixServer(path){
     //if (0 != access(path,0)){
     //    mkdir(path,0777);
     //}
-    this->mdApi = CThostFtdcMdApi::CreateFtdcMdApi(path,true);
-    this->mdApi->RegisterSpi(this);
+    this->path = path;
+
     memset(&this->userReq,0,sizeof(this->userReq));
     this->initMap();
 }
@@ -24,20 +24,20 @@ void MarketSpi::OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, boo
     cout<<pRspInfo->ErrorID <<pRspInfo->ErrorMsg;
 }
 
-MarketSpi::MarketSpi(CThostFtdcReqUserLoginField *user,const char * path):socketUnixServer(path){
-    if (0 != access(path,0)){
-        mkdir(path,0777);
-    }
-    this->mdApi = CThostFtdcMdApi::CreateFtdcMdApi(path,true);
-    this->mdApi->RegisterSpi(this);
-    //this->userReq = user;
-    memset(&this->userReq,0,sizeof(this->userReq));
-    strcpy(this->userReq.BrokerID,user->BrokerID);
-    strcpy(this->userReq.UserID,user->UserID);
-    strcpy(this->userReq.Password,user->Password);
-    //memcpy(&this->userReq,user,sizeof(user));
-    this->initMap();
-}
+//MarketSpi::MarketSpi(CThostFtdcReqUserLoginField *user,const char * path):socketUnixServer(path){
+//    if (0 != access(path,0)){
+//        mkdir(path,0777);
+//    }
+//    this->mdApi = CThostFtdcMdApi::CreateFtdcMdApi(path,true);
+//    this->mdApi->RegisterSpi(this);
+//    //this->userReq = user;
+//    memset(&this->userReq,0,sizeof(this->userReq));
+//    strcpy(this->userReq.BrokerID,user->BrokerID);
+//    strcpy(this->userReq.UserID,user->UserID);
+//    strcpy(this->userReq.Password,user->Password);
+//    //memcpy(&this->userReq,user,sizeof(user));
+//    this->initMap();
+//}
 void MarketSpi::setUserReg(
         const char * brokerID,
         const char * userID,
@@ -59,12 +59,23 @@ void MarketSpi::swapPassword(){
 }
 void MarketSpi::Join(){
     this->mdApi->Join();
-    this->send("addr");
+    //this->stop();
+    //this->send("addr");
+    cout<<"stop market"<<endl;
+}
+void MarketSpi::stop(){
+    if (this->mdApi==NULL)return;
+    this->mdApi->RegisterSpi(NULL);
+    this->mdApi->Release();
+    this->mdApi = NULL;
 }
 
 void MarketSpi::run(const char *addr){
-    //char _addr[1024];
-    //memset(this->Addr,0,strlen(addr));
+
+    if (this->mdApi != NULL) return;
+
+    this->mdApi = CThostFtdcMdApi::CreateFtdcMdApi(this->path,true);
+    this->mdApi->RegisterSpi(this);
     char _addr[1024];
     strcpy(_addr,addr);
     cout<<addr<<endl;
@@ -75,6 +86,7 @@ void MarketSpi::run(const char *addr){
     //mSpi->mdApi->Join();
 }
 void MarketSpi::initMap(){
+    this->mapstring["stop"] = 100;
     this->mapstring["ins"] = 1;
     this->mapstring["config"] = 2;
     this->mapstring["addr"] = 3;
@@ -82,7 +94,7 @@ void MarketSpi::initMap(){
 
 void MarketSpi::routeHand(const char * data){
 
-    cout<<"market:"<<data<<endl;
+    //cout<<"market:"<<data<<endl;
     char db[1024];
     strcpy(db,data);
 
@@ -98,6 +110,10 @@ void MarketSpi::routeHand(const char * data){
         i++;
     }
     switch (this->mapstring[str[0]]){
+    case 100:{
+        this->stop();
+    }
+        break;
     case 1:{
         char *ppInstrumentID[] = {str[1]};
         this->mdApi->SubscribeMarketData(ppInstrumentID,1);
@@ -105,7 +121,7 @@ void MarketSpi::routeHand(const char * data){
         break;
     case 2:{
 
-        cout<<"db:"<<str[1]<<str[2]<<str[3]<<str[4]<<endl;
+        //cout<<"db:"<<str[1]<<str[2]<<str[3]<<str[4]<<endl;
         this->setUserReg(str[1],str[2],str[3],str[4]);
         this->run(str[5]);
     }
@@ -130,6 +146,7 @@ void MarketSpi::OnFrontConnected(){
     cout << "Md connected"<< endl;
     int res = this->mdApi->ReqUserLogin(&this->userReq,this->getRequestID());
     cout << res << endl;
+    cout << this->mdApi->GetTradingDay() << endl;
 }
 
 void MarketSpi::OnFrontDisconnected(int nReason){
@@ -161,7 +178,7 @@ void MarketSpi::OnRspSubMarketData(
         CThostFtdcRspInfoField *pRspInfo,
         int nRequestID,
         bool bIsLast){
-    printf("%s %s\n",pSpecificInstrument->InstrumentID,pRspInfo->ErrorMsg);
+    //printf("%s %s\n",pSpecificInstrument->InstrumentID,pRspInfo->ErrorMsg);
 
 }
 

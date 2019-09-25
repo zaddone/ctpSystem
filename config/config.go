@@ -16,6 +16,9 @@ func init(){
 }
 type Config struct {
 	Port string
+	Static string
+	Templates string
+	RunServer bool
 
 	Weight int
 
@@ -25,6 +28,8 @@ type Config struct {
 	PasswordBak string
 	Taddr []string
 	Maddr []string
+	DefAdd int
+
 }
 func (self *Config)Save(fileName string){
 	fi,err := os.OpenFile(fileName,os.O_CREATE|os.O_WRONLY,0777)
@@ -43,11 +48,15 @@ func NewConfig(fileName string)  *Config {
 	_,err := os.Stat(fileName)
 	if err != nil {
 		c.Port=":8080"
+		c.Static = "static"
+		c.Templates = "./templates/*"
 		c.BrokerID = "9999"
 		c.UserID = "150797"
 		c.Password = "Dimon2019"
 		c.PasswordBak = "abc2019"
 		c.Weight = 4
+		c.DefAdd = 2
+		c.RunServer = false
 		c.Taddr = []string{
 			"tcp://180.168.146.187:10100",
 			"tcp://180.168.146.187:10101",

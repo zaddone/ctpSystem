@@ -289,17 +289,37 @@ func (self *Layer) add(c Element) bool {
 			Count[0]-=absDis
 		}
 		Count[self.tem.Stats]++
-		//fmt.Println(Count)
+		fmt.Println(Count,self.tem.Stats)
 		self.tem.Save()
 		self.tem = nil
 	}else{
-	if self.par.tem == nil &&
-	 math.Abs(dir) > absMaxD {
-	// math.Abs(dir) > absMaxD &&
-	//(self.par.direction>0) == (c.Diff()>0) &&
-	//(self.par.direction != 0) {
-		self.getTemplate()
-	}
+
+		if self.par.tem == nil &&
+		 math.Abs(dir) > absMaxD {
+		// math.Abs(dir) > absMaxD &&
+		//(self.par.direction>0) == (c.Diff()>0) &&
+		//(self.par.direction != 0) {
+			self.getTemplate()
+
+			//var dis string
+			//if self.tem.Dis {
+			//	dis= "sell"
+			//}else{
+			//	dis= "buy"
+			//}
+			//price := self.tem.can.Val()
+			//fmt.Println(price,dis)
+			//KeyChan<-&MsgKey{
+			//	Ins:c.Name(),
+			//	DB:[]byte(fmt.Sprintf(
+			//	"open %s %s %.2f",
+			//	c.Name(),
+			//	dis,
+			//	price,
+			//	)),
+			//	T:true,
+			//}
+		}
 	}
 
 	////fmt.Println(math.Abs(dir),absMaxD)

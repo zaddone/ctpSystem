@@ -5,7 +5,22 @@ import(
 )
 var (
 	Count [3]float64
+	KeyChan = make(chan *MsgKey,100)
+	//MkMap sync.Map
 )
+type MsgKey struct{
+	T bool
+	DB []byte
+	Ins string
+}
+func Send(h func(*MsgKey)){
+	for{
+		//mk := <-KeyChan
+		//_m := MkMap.Load(mk.Ins)
+		h(<-KeyChan)
+		//MkMap.Store(mk.Ins,mk)
+	}
+}
 type Cache struct {
 	LayerMap sync.Map
 	//BaseLayer map[string]*Layer
