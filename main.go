@@ -5,7 +5,7 @@ import(
 	"log"
 	"net"
 	"flag"
-	"time"
+	//"time"
 	"strings"
 	"github.com/boltdb/bolt"
 	"github.com/zaddone/ctpSystem/cache"
@@ -13,25 +13,48 @@ import(
 	"github.com/gin-gonic/gin"
 	"github.com/axgle/mahonia"
 	"net/http"
-	"strconv"
-	"os/exec"
-	"bytes"
-
+	//"strconv"
+	//"os/exec"
+	//"bytes"
+	"path/filepath"
 	//_ "github.com/zaddone/ctpSystem/route"
 )
 
 var (
-	traderAddr = flag.String("traddr", "/tmp/trader", "trader addr")
-	mdAddr = flag.String("mdaddr", "/tmp/market", "trader addr")
+
+	traderAddr string
+	mdAddr string
 	dbName = flag.String("db","Ins.db","db name")
 	DB *bolt.DB
 	//Farmat = "20060102T15:04:05"
 	Cache = cache.NewCache()
-	DefaultAddr = config.Conf.DefAdd
+	//DefaultAddr = config.Conf.DefAdd
 )
+func Runserver(){
+	_,md := filepath.Split(config.Conf.MdServer)
+	mdAddr = "/tmp/"+ md
+	_,tr := filepath.Split(config.Conf.TrServer)
+	traderAddr = "/tmp/"+ tr
+
+	for k,v := range config.Conf.User{
+		go v.RunMd(
+			config.Conf.MdServer,
+			mdAddr+"_"+k,
+			RouterMarket)
+		go v.RunTr(
+			config.Conf.TrServer,
+			traderAddr+"_"+k,
+			RouterTrader)
+	}
+}
+
 
 func init(){
 	flag.Parse()
+	//_,tr := filepath.Split(config.Conf.TrServer)
+	//traderAddr = "/tmp/"+ tr
+	//_,md := filepath.Split(config.Conf.MdServer)
+	//mdAddr = "/tmp/"+ md
 	var err error
 	DB,err = bolt.Open(*dbName,0600,nil)
 	if err != nil {
@@ -44,105 +67,49 @@ func init(){
 		c.HTML(http.StatusOK,"index.tmpl",nil)
 	})
 
-	Router.GET("/defaultaddr/:id",func(c *gin.Context){
-		id ,err := strconv.Atoi(c.Param("id"))
-		if err != nil {
-			c.JSON(http.StatusOK,gin.H{"msg":err})
-			return
-		}
-		DefaultAddr = id
-		c.JSON(http.StatusOK,gin.H{"msg":"Success","t":config.Conf.Taddr[DefaultAddr],"m":config.Conf.Maddr[DefaultAddr]})
-		//c.HTML(http.StatusOK,"index.tmpl",nil)
-	})
 	Router.GET("/wrun",func(c *gin.Context){
-		words := c.DefaultQuery("word","")
-		err = UnixSend(*mdAddr,[]byte(words))
+		words := strings.Join(strings.Split(c.DefaultQuery("word",""),"_")," ")
+		err = UnixSend(mdAddr+c.DefaultQuery("user",config.Conf.DefaultUser),[]byte(words))
 		if err != nil {
 			c.JSON(http.StatusOK,gin.H{"msg":err,"word":words})
 		}else{
 			c.JSON(http.StatusOK,gin.H{"msg":"Success","word":words})
 		}
-	})
-	Router.GET("/mlink",func(c *gin.Context){
-		words := "addr "+config.Conf.Maddr[DefaultAddr]
-		err = UnixSend(*traderAddr,[]byte(words))
-		if err != nil {
-			c.JSON(http.StatusOK,gin.H{"msg":err,"word":words})
-		}else{
-			c.JSON(http.StatusOK,gin.H{"msg":"Success","word":words})
-		}
-
-	})
-	Router.GET("/tlink",func(c *gin.Context){
-		words := "addr "+config.Conf.Taddr[DefaultAddr]
-		err = UnixSend(*traderAddr,[]byte(words))
-		if err != nil {
-			c.JSON(http.StatusOK,gin.H{"msg":err,"word":words})
-		}else{
-			c.JSON(http.StatusOK,gin.H{"msg":"Success","word":words})
-		}
-
 	})
 	Router.GET("/trun",func(c *gin.Context){
-		words := c.DefaultQuery("word","")
-		err = UnixSend(*traderAddr,[]byte(words))
+		//words := c.DefaultQuery("word","")
+		words := strings.Join(strings.Split(c.DefaultQuery("word",""),"_")," ")
+		err = UnixSend(traderAddr+c.DefaultQuery("user",config.Conf.DefaultUser),[]byte(words))
 		if err != nil {
 			c.JSON(http.StatusOK,gin.H{"msg":err,"word":words})
 		}else{
 			c.JSON(http.StatusOK,gin.H{"msg":"Success","word":words})
 		}
 	})
-	Router.GET("/close",func(c *gin.Context){
-		words := fmt.Sprintf("close %s",c.DefaultQuery("word","AP001"))
-		err = UnixSend(*traderAddr,[]byte(words))
-		if err != nil {
-			c.JSON(http.StatusOK,gin.H{"msg":err,"word":words})
-		}else{
-			c.JSON(http.StatusOK,gin.H{"msg":"Success","word":words})
-		}
-	})
-	Router.GET("/open",func(c *gin.Context){
-		words := fmt.Sprintf("open %s %s",c.DefaultQuery("word","AP001"),c.DefaultQuery("dis","buy"))
-		err = UnixSend(*traderAddr,[]byte(words))
-		if err != nil {
-			c.JSON(http.StatusOK,gin.H{"msg":err,"word":words})
-		}else{
-			c.JSON(http.StatusOK,gin.H{"msg":"Success","word":words})
-		}
-	})
+
 	go Router.Run(config.Conf.Port)
 	fmt.Println("start")
 
 	//taddr := getAddr(config.Conf.Taddr)
 	//maddr := getAddr(config.Conf.Maddr)
 	//fmt.Println(taddr,maddr)
-	go UnixServer(*traderAddr,RouterTrader)
-	go UnixServer(*mdAddr,RouterMarket)
+	//go UnixServer(*traderAddr,RouterTrader)
+	//go UnixServer(*mdAddr,RouterMarket)
 	go cache.Send(func(k *cache.MsgKey){
 		//return
 		if k.T{
-			UnixSend(*traderAddr,k.DB)
+			UnixSend(traderAddr+config.Conf.DefaultUser,k.DB)
 		}else{
-			UnixSend(*mdAddr,k.DB)
+			UnixSend(mdAddr+config.Conf.DefaultUser,k.DB)
 		}
 	})
-}
-func Runserver(){
-	cmd := exec.Command("./ctpServer")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err := cmd.Run()
-	if err != nil {
-	    log.Fatal(err)
-	}
-	log.Printf("ctpServer: %q\n", out.String())
 }
 
 func main(){
 
-	if config.Conf.RunServer{
-		go Runserver()
-	}
+	//if config.Conf.RunServer{
+	Runserver()
+	//}
 	select{}
 	//exec.Command()
 
@@ -157,14 +124,10 @@ func ConvertToString(src string, srcCode string, tagCode string) string {
 	return result
 }
 
-
-
-
-
-func RouterTrader(db []byte){
+func RouterTrader(path string,db []byte){
 	//fmt.Println(string(db))
 	dbs := strings.Split(string(db)," ")
-	fmt.Println("trader",dbs)
+	//fmt.Println("trader",dbs)
 	switch(dbs[0]){
 	case "ins":
 		err := DB.Batch(func(t *bolt.Tx)error{
@@ -174,43 +137,15 @@ func RouterTrader(db []byte){
 		if err != nil {
 			panic(err)
 		}
-		err = UnixSend(*mdAddr,db)
+		err = UnixSend(mdAddr+"_"+strings.Split(path,"_")[1],db)
 		if err != nil {
-			panic(err)
+			log.Println(err)
 		}
-	case "addr":
-		addr := getAddr(config.Conf.Taddr)
-		if len(addr) ==0 {
-			return
-		}
-		err := UnixSend(*traderAddr,[]byte(addr))
-		if err != nil {
-			panic(err)
-		}
-	case "config":
-		addr := getAddr(config.Conf.Taddr)
-		if len(addr) ==0 {
-			return
-		}
-		str := fmt.Sprintf(
-			"config %s %s %s %s %s",
-			config.Conf.BrokerID,
-			config.Conf.UserID,
-			config.Conf.Password,
-			config.Conf.PasswordBak,
-			addr,
-		)
-		fmt.Println(str)
-		err := UnixSend(*traderAddr,[]byte(str))
-		if err != nil {
-			panic(err)
-		}
-
 	default:
 		fmt.Println(ConvertToString(string(db),"gbk","utf-8"))
 	}
 }
-func RouterMarket(db []byte){
+func RouterMarket(path string,db []byte){
 	dbs := strings.Split(string(db)," ")
 	//fmt.Println("market",dbs)
 	switch(dbs[0]){
@@ -218,7 +153,7 @@ func RouterMarket(db []byte){
 		err := DB.View(func(t *bolt.Tx)error{
 			return t.ForEach(
 				func(name []byte,b *bolt.Bucket)error{
-				return UnixSend(*mdAddr,append(append(db,' '),name...))
+				return UnixSend(path,append(append(db,' '),name...))
 			})
 		})
 		if err != nil {
@@ -232,39 +167,13 @@ func RouterMarket(db []byte){
 			return
 		}
 		c.ToSave(DB)
-		//Cache.Add(c)
-	case "addr":
-		addr := getAddr(config.Conf.Maddr)
-		if len(addr) ==0 {
-			return
-		}
-		err := UnixSend(*mdAddr,[]byte(addr))
-		if err != nil {
-			panic(err)
-		}
-	case "config":
-		addr := getAddr(config.Conf.Maddr)
-		if len(addr) ==0 {
-			return
-		}
-		str := fmt.Sprintf(
-			"config %s %s %s %s %s",
-			config.Conf.BrokerID,
-			config.Conf.UserID,
-			config.Conf.Password,
-			config.Conf.PasswordBak,
-			addr,
-		)
-		err := UnixSend(*mdAddr,[]byte(str))
-		if err != nil {
-			panic(err)
-		}
+		Cache.Add(c)
 	default:
 		fmt.Println(ConvertToString(string(db),"gbk","utf-8"))
 	}
 }
 func UnixSend(raddr string,db []byte) error {
-	rAddr, err := net.ResolveUnixAddr("unixgram",raddr +"_")
+	rAddr, err := net.ResolveUnixAddr("unixgram",raddr)
 	if err != nil {
 		return err
 	}
@@ -304,42 +213,3 @@ func UnixServer(local string,hand func([]byte)){
 	}
 	ln.Close()
 }
-
-func checkTcp(addr string) (error,int64) {
-
-	b := time.Now().UnixNano()
-	ad := strings.Split(addr,"://")
-	fmt.Println(ad)
-	hawkServer,err := net.ResolveTCPAddr("tcp", ad[1])
-	if err != nil {
-		return err,0
-	}
-	c,err := net.DialTCP("tcp",nil,hawkServer)
-	if err != nil {
-		return err,0
-	}
-	defer c.Close()
-	return nil,time.Now().UnixNano() - b
-
-}
-func getAddr(addrs []string) (addr string) {
-
-	return addrs[DefaultAddr]
-	//var min int64
-	//for _,a_ := range addrs {
-	//	err,d := checkTcp(a_)
-	//	if err != nil {
-	//		fmt.Println(err)
-	//		continue
-	//	}
-	//	fmt.Println(a_,d)
-	//	if min==0 || min > d {
-	//		addr=a_
-	//		min = d
-	//	}
-	//}
-	//return
-
-}
-
-

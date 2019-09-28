@@ -23,8 +23,6 @@ ${PROJECT_SOURCE_DIR}/marketspi.h
 ${PROJECT_SOURCE_DIR}/socketunixserver.h
 ${PROJECT_SOURCE_DIR}/traderspi.h
 )
-
 LINK_DIRECTORIES(${PROJECT_SOURCE_DIR}/api_tradeapi)
 add_executable(${PROJECT_NAME} ${SRC} ${HEADER})
-
 target_link_libraries(${PROJECT_NAME} -lthostmduser -lthosttraderapi -lpthread)
