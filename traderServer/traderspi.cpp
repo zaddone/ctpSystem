@@ -1,9 +1,9 @@
 #include <iostream>
-#include "traderspi.h"
 #include <unistd.h>
 //#include <sys/stat.h>
 #include <thread>
 //#include <string.h>
+#include "traderspi.h"
 
 using namespace std;
 bool IsFlowControl(int iResult)
@@ -28,12 +28,15 @@ TraderSpi::TraderSpi(
         const char *addr,
         const char * path):socketUnixServer(path){
 
+    this->trApi = NULL;
+    this->TradingDay = NULL;
     this->queryIns = false;
     this->path = path;
+    this->Addr = addr;
     this->initMap();
     memset(&this->userReq,0,sizeof(this->userReq));
     this->setUserReg(brokerID,userID,password,passwordBak);
-    this->run(addr);
+    this->run();
 }
 
 void TraderSpi::initMap(){
@@ -59,7 +62,8 @@ void TraderSpi::routeHand(const char *data){
     //}
     char db[1024];
     strcpy(db,data);
-    //cout<<"db:"<<db<<endl;
+
+    //cout<<"db "<<db<<endl;
     char *p;
     char sep[] = " ";
     char str[100][1024];
@@ -79,12 +83,14 @@ void TraderSpi::routeHand(const char *data){
         break;
     case 2:{
         this->setUserReg(str[1],str[2],str[3],str[4]);
-        this->run(str[5]);
+        this->Addr = str[5];
+        this->run();
     }
         break;
     case 3:{
         //this->setUserReg(str[1],str[2],str[3],str[4]);
-        this->run(str[1]);
+        this->Addr = str[1];
+        this->run();
     }
         break;
     case 4:{
@@ -101,6 +107,7 @@ void TraderSpi::routeHand(const char *data){
     }
         break;
     case 7:{
+        cout<<"db:"<<db<<endl;
         this->reqTradingAccount();
     }
         break;
@@ -148,6 +155,7 @@ void TraderSpi::OnFrontDisconnected(int nReason){
     this->stop();
 }
 void TraderSpi::OnFrontConnected(){
+    cout<<"conn"<<endl;
     this->reqUserLogin();
 
 }
@@ -185,7 +193,7 @@ void TraderSpi::OnRspQryTradingAccount(
         int nRequestID,
         bool bIsLast) {
     //return;
-
+    cout<<"onRspTA"<<endl;
     if (pRspInfo && pRspInfo->ErrorID!=0){
         cout<<pRspInfo->ErrorMsg<<endl;
         return;
@@ -254,8 +262,6 @@ void TraderSpi::OnRspOrderInsert(
     cout<<"order insert"<<pInputOrder->OrderRef<<endl;
 }
 
-
-
 void TraderSpi::stop(){
     if (this->trApi== NULL) return;
     this->trApi->RegisterSpi(NULL);
@@ -264,7 +270,7 @@ void TraderSpi::stop(){
     //this->Join();
     this->trApi = NULL;
     this->over =  true;
-    //cout<<"stop ok"<<endl;
+    cout<<"stop ok"<<endl;
 }
 void TraderSpi::Join(){
     this->trApi->Join();
@@ -288,10 +294,10 @@ void TraderSpi::OnRspQryInstrument(
     //cout<< pInstrument->InstrumentName<<endl;
     //cout<< pInstrument->InstrumentID<<endl;
     this->mapInstrument[pInstrument->InstrumentID] = *pInstrument;
-    //char db[100] = "ins ";
-    //strcat(db,pInstrument->InstrumentID);
-    cout<< "ins "<<pInstrument->InstrumentID <<endl;
-    //this->send(db);
+    char db[100] = "ins ";
+    strcat(db,pInstrument->InstrumentID);
+    //cout<< "ins "<<pInstrument->InstrumentID <<endl;
+    this->send(db);
     //cout<< db <<endl;
     //this->routeHand(db);
     //pInstrument->InstrumentID;
@@ -315,6 +321,12 @@ void TraderSpi::OnRspUserLogin(
 {
 
     cout<<"trader"<<pRspInfo->ErrorID<<endl;
+
+    //if (pRspInfo->ErrorID != 0 ){
+    //    cout<<"trader:"<<pRspInfo->ErrorID<<endl;
+    //    cout<<pRspInfo->ErrorMsg<<endl;
+
+    //}
     //char pass[]="abc2019";
     if (140==pRspInfo->ErrorID){
         CThostFtdcUserPasswordUpdateField res;
@@ -337,9 +349,8 @@ void TraderSpi::OnRspUserLogin(
         this->swapPassword();
         this->reqUserLogin();
     }else if (0 == pRspInfo->ErrorID){
-
         this->TradingDay = 	this->trApi->GetTradingDay();
-        //cout <<"Td connected "<<this->trApi->GetTradingDay() << endl;
+        cout <<"Td connected "<<this->TradingDay << endl;
         this->reqInstruments();
     }else if (7 == pRspInfo->ErrorID){
         this->swapPassword();
@@ -348,24 +359,43 @@ void TraderSpi::OnRspUserLogin(
         //strcpy(this->userReq.Password,pass);
         //strcpy(pass,bakPass);
         this->reqUserLogin();
+    }else{
+        cout<<pRspInfo->ErrorMsg<<endl;
     }
     //if (0 == pRspInfo->ErrorID){
     //    this->queryInstruments();
     //};
 }
 
-void TraderSpi::run(const char *addr){
-    if (this->trApi != NULL) return;
+void TraderSpi::run(const char * addr){
+    this->trApi = CThostFtdcTraderApi::CreateFtdcTraderApi(this->path);
+    char _addr[1024];
+    strcpy(_addr,addr);
+    cout<<_addr<<endl;
+    this->trApi->SubscribePublicTopic(THOST_TERT_RESTART);				// 注册公有流
+    this->trApi->SubscribePrivateTopic(THOST_TERT_RESTART);
+    this->trApi->RegisterFront(_addr);
 
+    this->trApi->RegisterSpi(this);
+    this->trApi->Init();
+    //this->Join();
+    thread th(&TraderSpi::Join,this);
+    th.detach();
+
+}
+
+void TraderSpi::run(){
+    if (this->trApi != NULL) return;
     this->trApi = CThostFtdcTraderApi::CreateFtdcTraderApi(this->path);
     this->trApi->RegisterSpi(this);
     char _addr[1024];
-    strcpy(_addr,addr);
-    //cout<<addr<<endl;
+    strcpy(_addr,Addr);
+    //cout<<_addr<<endl;
     this->trApi->SubscribePublicTopic(THOST_TERT_RESTART);				// 注册公有流
     this->trApi->SubscribePrivateTopic(THOST_TERT_RESTART);
     this->trApi->RegisterFront(_addr);
     this->trApi->Init();
+    //this->Join();
     thread th(&TraderSpi::Join,this);
     th.detach();
     //mSpi->mdApi->Join();
@@ -544,6 +574,7 @@ void TraderSpi::reqQrySettlementInfoConfirm(){
 }
 void TraderSpi::reqTradingAccount(){
 
+    cout <<"Td connected "<<this->TradingDay << endl;
     if (NULL==this->TradingDay)return;
     CThostFtdcQryTradingAccountField pQryTradingAccount;
     memset(&pQryTradingAccount,0,sizeof(pQryTradingAccount));
@@ -554,6 +585,7 @@ void TraderSpi::reqTradingAccount(){
     while (true)
     {
         int iResult = this->trApi->ReqQryTradingAccount(&pQryTradingAccount,this->getRequestID());
+        cout<<iResult<<endl;
         if (!IsFlowControl(iResult))
         {
             break;
@@ -710,7 +742,7 @@ void TraderSpi::sendOrderOpen(const char *ins, const char *dir,const double pric
     }
 }
 void TraderSpi::reqUserLogin(){
-    if (NULL==this->TradingDay)return;
+    //if (NULL!=this->TradingDay)return;
     while (true)
     {
         int iResult = this->trApi->ReqUserLogin(&this->userReq,this->getRequestID());

@@ -11,28 +11,35 @@ using namespace std;
 socketUnixServer::socketUnixServer(const char * path)
 {
 
-    //char p[1024]="/tmp/";
     //strcat(p,path);
-    //cout<<p<<endl;
-    //this->addr.sun_family = AF_UNIX;
-    //strcpy(this->addr.sun_path, path);
+    //cout<<path<<endl;
 
-    this->addrTo.sun_family = AF_UNIX;
-    //strcat(p,"_");
+
+
     unlink(path);
+    this->addrTo.sun_family = AF_UNIX;
     strcpy(this->addrTo.sun_path, path);
+
+
+    char p[1024];
+    strcpy(p,path);
+    strcat(p,"_");
+    cout<<p<<endl;
+    this->addr.sun_family = AF_UNIX;
+    strcpy(this->addr.sun_path, p);
+
     this->over = false;
     //this->receive();
 }
 void socketUnixServer::send(const char *data){
 //    cout<<data<<endl;
-//    int sock;
-//    //sockaddr_un addr;
-//    //socklen_t addrlen;
-//    sock = socket(AF_UNIX, SOCK_DGRAM, 0);
-//    sendto(sock, data, strlen(data), 0, (sockaddr*)&this->addr, sizeof(this->addr));
-//    close(sock);
-//
+    int sock;
+    //sockaddr_un addr;
+    //socklen_t addrlen;
+    sock = socket(AF_UNIX, SOCK_DGRAM, 0);
+    sendto(sock, data, strlen(data), 0, (sockaddr*)&this->addr, sizeof(this->addr));
+    close(sock);
+
 }
 void socketUnixServer::receive(){
     int sock;
@@ -52,7 +59,7 @@ void socketUnixServer::receive(){
       memset(buf, 0, sizeof(buf));
       n = recv(sock, buf, sizeof(buf) - 1, 0);
       this->routeHand(buf);
-      //printf("recv:%s\n", buf);
+      printf("recv:%s\n", buf);
     }
     printf("end socket server");
     close(sock);

@@ -69,7 +69,7 @@ func init(){
 
 	Router.GET("/wrun",func(c *gin.Context){
 		words := strings.Join(strings.Split(c.DefaultQuery("word",""),"_")," ")
-		err = UnixSend(mdAddr+c.DefaultQuery("user",config.Conf.DefaultUser),[]byte(words))
+		err = UnixSend(mdAddr+"_"+c.DefaultQuery("user",config.Conf.DefaultUser),[]byte(words))
 		if err != nil {
 			c.JSON(http.StatusOK,gin.H{"msg":err,"word":words})
 		}else{
@@ -79,11 +79,12 @@ func init(){
 	Router.GET("/trun",func(c *gin.Context){
 		//words := c.DefaultQuery("word","")
 		words := strings.Join(strings.Split(c.DefaultQuery("word",""),"_")," ")
-		err = UnixSend(traderAddr+c.DefaultQuery("user",config.Conf.DefaultUser),[]byte(words))
+		addr := traderAddr+"_"+c.DefaultQuery("user",config.Conf.DefaultUser)
+		err = UnixSend(addr,[]byte(words))
 		if err != nil {
 			c.JSON(http.StatusOK,gin.H{"msg":err,"word":words})
 		}else{
-			c.JSON(http.StatusOK,gin.H{"msg":"Success","word":words})
+			c.JSON(http.StatusOK,gin.H{"msg":"Success","word":words,"addr":addr})
 		}
 	})
 
@@ -139,7 +140,7 @@ func RouterTrader(path string,db []byte){
 		}
 		err = UnixSend(mdAddr+"_"+strings.Split(path,"_")[1],db)
 		if err != nil {
-			log.Println(err)
+			log.Println(dbs[1],err)
 		}
 	default:
 		fmt.Println(ConvertToString(string(db),"gbk","utf-8"))
@@ -173,6 +174,7 @@ func RouterMarket(path string,db []byte){
 	}
 }
 func UnixSend(raddr string,db []byte) error {
+	//fmt.Println("send",raddr)
 	rAddr, err := net.ResolveUnixAddr("unixgram",raddr)
 	if err != nil {
 		return err

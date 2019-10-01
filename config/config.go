@@ -6,10 +6,12 @@ import(
 	"os"
 	"os/exec"
 	"context"
-	"bufio"
 	"fmt"
 	"log"
 	"time"
+	//"bufio"
+	"net"
+	//"io"
 	//"path/filepath"
 )
 var(
@@ -55,34 +57,121 @@ func (self *UserInfo)RunMd(path string,local string,hand func(string,[]byte)){
 		},hand)
 	}
 }
-func runComm(path string,word []string,hand func(string,[]byte)){
 
-	//fmt.Println(path,word)
+//func runCommbak(path string,word []string,hand func(string,[]byte)){
+//
+//	//fmt.Println(path,word)
+//	ctx,cancel := context.WithCancel(context.Background())
+//	cmd := exec.CommandContext(ctx,path,word...)
+//	//cmd.Stdout = io.SeekStart
+//	out,err := cmd.StdoutPipe()
+//	if err != nil {
+//		panic(err)
+//	}
+//	buf := bufio.NewReader(out)
+//	err = cmd.Start()
+//	if err != nil {
+//		panic(err)
+//	}
+//	var line [8196]byte
+//	//var isPrefix bool
+//	ch := make(chan int,1)
+//	addr := word[5]
+//	go func(){
+//		//line,isPrefix,err = buf.ReadLine()
+//		line,err = buf.ReadBytes('\n')
+//		line = line[:len(line)-1]
+//		if err != nil {
+//			fmt.Println(err)
+//			cancel()
+//			ch<-1
+//			return
+//		}
+//		//log.Println(string(line))
+//		//hand(addr,line)
+//		ch <- 2
+//	}()
+//	select{
+//	case t:=<-ch:
+//		if t == 1{
+//			return
+//		}
+//	case <-time.After(time.Second*30):
+//		log.Println("time out")
+//		cancel()
+//		return
+//	}
+//
+//	//fmt.Println("run")
+//	for{
+//		//line,isPrefix,err = buf.ReadLine()
+//		line,err := buf.ReadBytes('\n')
+//		if err != nil {
+//			fmt.Println(err)
+//			cancel()
+//			break
+//		}
+//		line = line[:len(line)-1]
+//		//fmt.Println(string(line))
+//		//if isPrefix {
+//		//	db = append(db,line...)
+//		//}else{
+//		//	db = line
+//		//}
+//		//n,err := out.Read(line[:])
+//		//if err != nil {
+//		//	fmt.Println(err)
+//		//	cancel()
+//		//	break
+//		//}
+//		log.Println("log",string(line))
+//		go hand(addr,line)
+//	}
+//	cmd.Wait()
+//	log.Println(path,"end")
+//}
+
+func runComm(path string,word []string,hand func(string,[]byte)){
 	ctx,cancel := context.WithCancel(context.Background())
 	cmd := exec.CommandContext(ctx,path,word...)
 	out,err := cmd.StdoutPipe()
 	if err != nil {
 		panic(err)
 	}
-	buf := bufio.NewReader(out)
+	//buf := bufio.NewReader(out)
 	err = cmd.Start()
 	if err != nil {
 		panic(err)
 	}
-	var line,db []byte
-	var isPrefix bool
+	//var isPrefix bool
 	ch := make(chan int,1)
+	addr := word[5]
 	go func(){
-		line,isPrefix,err = buf.ReadLine()
-
+		var line [4096]byte
+		var err error
+		var n int
+		n,err = out.Read(line[:])
+		//line,isPrefix,err = buf.ReadLine()
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			cancel()
 			ch<-1
 			return
 		}
-		hand(word[5],line)
+		log.Println(addr,string(line[:n]))
+		//hand(addr,line)
 		ch <- 2
+		for{
+			n,err = out.Read(line[:])
+			//line,err = buf.ReadBytes('\n')
+			//line = line[:len(line)-1]
+			if err != nil {
+				log.Println(addr,err)
+				cancel()
+				return
+			}
+			log.Println(addr,string(line[:n]))
+		}
 	}()
 	select{
 	case t:=<-ch:
@@ -90,27 +179,67 @@ func runComm(path string,word []string,hand func(string,[]byte)){
 			return
 		}
 	case <-time.After(time.Second*30):
+		log.Println("time out")
 		cancel()
 		return
 	}
-	//fmt.Println("run")
-	for{
-		line,isPrefix,err = buf.ReadLine()
-		if err != nil {
-			fmt.Println(err)
-			cancel()
-			break
-		}
-		if isPrefix {
-			db = append(db,line...)
-		}else{
-			db = line
-		}
-		hand(word[5],db)
+	//ctx.Done()
+	local := addr + "_"
+	err = os.Remove(local)
+	if err != nil {
+		fmt.Println(err)
 	}
+	lAddr, err := net.ResolveUnixAddr("unixgram",local)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	ln, err := net.ListenUnixgram("unixgram", lAddr )
+	if err!= nil {
+		fmt.Println(err)
+		return
+	}
+	go func (){
+		for {
+			var buf [4096]byte
+			n,err := ln.Read(buf[:])
+			if err != nil {
+				log.Println(addr,err)
+				return
+				//panic(err)
+			}
+			hand(addr,buf[:n])
+		}
+	}()
 	cmd.Wait()
-	log.Println(path,"end")
+	ln.Close()
+
 }
+//func UnixServer(local,addr string,hand func(string,[]byte)){
+//	err := os.Remove(local)
+//	if err != nil {
+//		fmt.Println(err)
+//	}
+//	lAddr, err := net.ResolveUnixAddr("unixgram",local)
+//	if err != nil {
+//		fmt.Println(err)
+//		return
+//	}
+//	ln, err := net.ListenUnixgram("unixgram", lAddr )
+//	if err!= nil {
+//		fmt.Println(err)
+//		return
+//	}
+//	for{
+//		var buf [1024]byte
+//		n,_,err := ln.ReadFromUnix(buf[:])
+//		if err != nil {
+//			panic(err)
+//		}
+//		go hand(addr,buf[:n])
+//	}
+//	ln.Close()
+//}
 type Config struct {
 	User map[string]*UserInfo
 	DefaultUser string

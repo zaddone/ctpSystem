@@ -8,7 +8,7 @@ class ctpspi
 {
 public:
     ctpspi();
-    //ctpspi(const char *BrokerID, const char *UserID, const char * Password);
+    ctpspi(const char *BrokerID, const char *UserID, const char * Password);
     ~ctpspi();
     void runTrader(const char *addr);
     void runMarket(const char *addr);

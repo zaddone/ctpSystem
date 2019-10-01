@@ -1,9 +1,9 @@
 #include <iostream>
 #include <unistd.h>
-#include <sys/stat.h>
+//#include <sys/stat.h>
 //#include <stdio.h>
-#include "marketspi.h"
 #include <thread>
+#include "marketspi.h"
 //#include<cmath>
 //#include <mutex>
 
@@ -35,6 +35,8 @@ MarketSpi::MarketSpi(
         const char *passwordBak,
         const char *addr,
         const char * path):socketUnixServer(path){
+    this->mdApi = NULL;
+    this->TradingDay = NULL;
     this->path = path;
     this->Addr = addr;
     this->initMap();
@@ -153,6 +155,7 @@ int MarketSpi::getRequestID(){
     return this->requestID;
 }
 void MarketSpi::OnFrontConnected(){
+    cout<<"conn"<<endl;
     this->reqUserLogin();
     //int res = this->mdApi->ReqUserLogin(&this->userReq,this->getRequestID());
     //if (0==res)
@@ -190,7 +193,7 @@ void MarketSpi::OnRspUserLogin(
 
     if (pRspInfo && 0!=pRspInfo->ErrorID){
         cout<<pRspInfo->ErrorMsg<<endl;
-        this->run();
+        //this->run();
         return;
     }
     this->TradingDay = this->mdApi->GetTradingDay();
@@ -231,8 +234,8 @@ void MarketSpi::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarke
            pDepthMarketData->AskPrice1,
            pDepthMarketData->BidPrice1
             );
-    cout<<str<<endl;
-    //this->send(str);
+    //cout<<str<<endl;
+    this->send(str);
 }
 
 void MarketSpi::subscribeMarketData(char * ins){

@@ -19,7 +19,6 @@ public:
     CThostFtdcTraderApi *trApi;
     virtual void routeHand(const char *data);
     int getRequestID();
-    void run(const char *addr);
     virtual void OnFrontConnected();
 
     virtual void OnRspUserLogin(
@@ -79,6 +78,8 @@ private:
     CThostFtdcReqUserLoginField userReq;
     map<string , int >mapstring;
     map<string, CThostFtdcInstrumentField >mapInstrument;
+    void run();
+    void run(const char * addr);
     void initMap();
     void Join();
     void setUserReg(
@@ -102,6 +103,7 @@ private:
     const char * path;
     bool queryIns;
     const char * TradingDay;
+    const char * Addr;
 
 };
 

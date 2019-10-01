@@ -14,7 +14,7 @@ public:
 
 private:
     char * path;
-    //sockaddr_un addr;
+    sockaddr_un addr;
     sockaddr_un addrTo;
 };
 

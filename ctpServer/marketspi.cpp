@@ -24,20 +24,20 @@ void MarketSpi::OnRspError(CThostFtdcRspInfoField *pRspInfo, int nRequestID, boo
     cout<<pRspInfo->ErrorID <<pRspInfo->ErrorMsg;
 }
 
-//MarketSpi::MarketSpi(CThostFtdcReqUserLoginField *user,const char * path):socketUnixServer(path){
-//    if (0 != access(path,0)){
-//        mkdir(path,0777);
-//    }
-//    this->mdApi = CThostFtdcMdApi::CreateFtdcMdApi(path,true);
-//    this->mdApi->RegisterSpi(this);
-//    //this->userReq = user;
-//    memset(&this->userReq,0,sizeof(this->userReq));
-//    strcpy(this->userReq.BrokerID,user->BrokerID);
-//    strcpy(this->userReq.UserID,user->UserID);
-//    strcpy(this->userReq.Password,user->Password);
-//    //memcpy(&this->userReq,user,sizeof(user));
-//    this->initMap();
-//}
+MarketSpi::MarketSpi(CThostFtdcReqUserLoginField *user,const char * path):socketUnixServer(path){
+    //if (0 != access(path,0)){
+    //    mkdir(path,0777);
+    //}
+    this->mdApi = CThostFtdcMdApi::CreateFtdcMdApi(path,true);
+    this->mdApi->RegisterSpi(this);
+    //this->userReq = user;
+    memset(&this->userReq,0,sizeof(this->userReq));
+    strcpy(this->userReq.BrokerID,user->BrokerID);
+    strcpy(this->userReq.UserID,user->UserID);
+    strcpy(this->userReq.Password,user->Password);
+    //memcpy(&this->userReq,user,sizeof(user));
+    this->initMap();
+}
 void MarketSpi::setUserReg(
         const char * brokerID,
         const char * userID,

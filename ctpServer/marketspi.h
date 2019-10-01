@@ -9,7 +9,7 @@ class MarketSpi : public socketUnixServer,CThostFtdcMdSpi
 {
 public:
     MarketSpi(const char *path);
-    //MarketSpi(CThostFtdcReqUserLoginField *user, const char *path);
+    MarketSpi(CThostFtdcReqUserLoginField *user, const char *path);
     CThostFtdcMdApi *mdApi;
     virtual void routeHand(const char *data);
     int getRequestID();

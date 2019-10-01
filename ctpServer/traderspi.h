@@ -9,7 +9,7 @@ class TraderSpi:public socketUnixServer,CThostFtdcTraderSpi
 {
 public:
     TraderSpi(const char* path);
-    //TraderSpi(CThostFtdcReqUserLoginField *user,const char* path);
+    TraderSpi(CThostFtdcReqUserLoginField *user,const char* path);
     CThostFtdcTraderApi *trApi;
     virtual void routeHand(const char *data);
     int getRequestID();

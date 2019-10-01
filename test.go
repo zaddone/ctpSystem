@@ -18,20 +18,23 @@ func main(){
 	if err != nil {
 		panic(err)
 	}
-	buf := bufio.NewReader(out)
+	//buf := bufio.NewReader(out)
 	//var out bytes.Buffer
 	//cmd.Stdout = &out
 	err = cmd.Start()
 	if err != nil {
 		panic(err)
 	}
+	var line [8196]byte
 	for {
-		buf.ReadLine()
-		l,p,e := buf.ReadLine()
-		fmt.Println(string(l),p,e)
+		//buf.ReadLine()
+		n,e := out.Read(line[:])
+		//l,e := buf.ReadBytes('\n')
+		//l,p,e := buf.ReadLine()
 		if e != nil {
 			panic(e)
 		}
+		fmt.Println(string(l[:len(l)-1]),e)
 	}
 	//cmd.Wait()
 	//fmt.Println(out.String())

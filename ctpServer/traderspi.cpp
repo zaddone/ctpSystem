@@ -21,6 +21,21 @@ TraderSpi::TraderSpi(const char * path):socketUnixServer(path){
     this->initMap();
 }
 
+TraderSpi::TraderSpi(CThostFtdcReqUserLoginField *user,const char * path):socketUnixServer(path){
+    //if (0 != access(path,0)){
+    //    mkdir(path,0777);
+    //}
+    this->trApi = CThostFtdcTraderApi::CreateFtdcTraderApi(path);
+    this->trApi->RegisterSpi(this);
+    //this->userReq = user;
+    memset(&this->userReq,0,sizeof(this->userReq));
+    strcpy(this->userReq.BrokerID,user->BrokerID);
+    strcpy(this->userReq.UserID,user->UserID);
+    strcpy(this->userReq.Password,user->Password);
+    //memcpy(&this->userReq,user,sizeof(user));
+    this->initMap();
+}
+
 void TraderSpi::initMap(){
     //this->mapstring["ins"] = 1;
     this->mapstring["stop"] = 100;
@@ -287,7 +302,11 @@ void TraderSpi::OnRspUserLogin(
     bool bIsLast)
 {
 
-    cout<<"trader"<<pRspInfo->ErrorID<<endl;
+    if (pRspInfo->ErrorID != 0 ){
+        cout<<"trader:"<<pRspInfo->ErrorID<<endl;
+        cout<<pRspInfo->ErrorMsg<<endl;
+
+    }
 
     //char pass[]="abc2019";
     if (140==pRspInfo->ErrorID){
