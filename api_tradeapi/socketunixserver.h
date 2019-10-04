@@ -10,7 +10,7 @@ public:
     void receive();
     virtual void routeHand(const char *data)=0;
     void ReqConfig();
-    bool over;
+    //bool over;
 
 private:
     char * path;

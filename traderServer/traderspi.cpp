@@ -28,8 +28,9 @@ TraderSpi::TraderSpi(
         const char *addr,
         const char * path):socketUnixServer(path){
 
+    //this->Login = false;
     this->trApi = NULL;
-    this->TradingDay = NULL;
+    //this->TradingDay = NULL;
     this->queryIns = false;
     this->path = path;
     this->Addr = addr;
@@ -63,7 +64,7 @@ void TraderSpi::routeHand(const char *data){
     char db[1024];
     strcpy(db,data);
 
-    //cout<<"db "<<db<<endl;
+    cout<<"db "<<db<<endl;
     char *p;
     char sep[] = " ";
     char str[100][1024];
@@ -193,7 +194,7 @@ void TraderSpi::OnRspQryTradingAccount(
         int nRequestID,
         bool bIsLast) {
     //return;
-    cout<<"onRspTA"<<endl;
+    //cout<<"onRspTA"<<endl;
     if (pRspInfo && pRspInfo->ErrorID!=0){
         cout<<pRspInfo->ErrorMsg<<endl;
         return;
@@ -202,7 +203,10 @@ void TraderSpi::OnRspQryTradingAccount(
     if (!bIsLast)return;
 
     if (!pTradingAccount)return;
-    cout<<pTradingAccount->Deposit<<endl;
+    char db[1024];
+    sprintf(db,"ta %lf",pTradingAccount->Deposit);
+    cout<<db<<endl;
+    this->send(db);
 
 }
 
@@ -269,7 +273,7 @@ void TraderSpi::stop(){
     //this->trApi->Join();
     //this->Join();
     this->trApi = NULL;
-    this->over =  true;
+    //this->over =  true;
     cout<<"stop ok"<<endl;
 }
 void TraderSpi::Join(){
@@ -349,8 +353,12 @@ void TraderSpi::OnRspUserLogin(
         this->swapPassword();
         this->reqUserLogin();
     }else if (0 == pRspInfo->ErrorID){
-        this->TradingDay = 	this->trApi->GetTradingDay();
-        cout <<"Td connected "<<this->TradingDay << endl;
+        //this->Login = true;
+        char trading[20]="TDay ";
+        strcat(trading,this->trApi->GetTradingDay());
+        this->send(trading);
+        //strcpy(this->TradingDay,this->trApi->GetTradingDay());
+        cout <<"Td connected "<< trading << endl;
         this->reqInstruments();
     }else if (7 == pRspInfo->ErrorID){
         this->swapPassword();
@@ -365,23 +373,6 @@ void TraderSpi::OnRspUserLogin(
     //if (0 == pRspInfo->ErrorID){
     //    this->queryInstruments();
     //};
-}
-
-void TraderSpi::run(const char * addr){
-    this->trApi = CThostFtdcTraderApi::CreateFtdcTraderApi(this->path);
-    char _addr[1024];
-    strcpy(_addr,addr);
-    cout<<_addr<<endl;
-    this->trApi->SubscribePublicTopic(THOST_TERT_RESTART);				// 注册公有流
-    this->trApi->SubscribePrivateTopic(THOST_TERT_RESTART);
-    this->trApi->RegisterFront(_addr);
-
-    this->trApi->RegisterSpi(this);
-    this->trApi->Init();
-    //this->Join();
-    thread th(&TraderSpi::Join,this);
-    th.detach();
-
 }
 
 void TraderSpi::run(){
@@ -449,18 +440,19 @@ void TraderSpi::OnRspQrySettlementInfo(
 
 
     if (!pSettlementInfo) return;
-    cout<<pSettlementInfo->TradingDay<<endl;
-    cout<<pSettlementInfo->SequenceNo<< endl;
-    cout<<pSettlementInfo->SettlementID<< endl;
-    cout<<pSettlementInfo->Content<< endl;
-    //sprintf(msg,
-    //        "msg TradingDay|%s SequenceNo|%d SettlementID|%d Content|%s",
-    //        pSettlementInfo->TradingDay,
-    //        pSettlementInfo->SequenceNo,
-    //        pSettlementInfo->SettlementID,
-    //        pSettlementInfo->Content);
-    //cout<<msg<<endl;
-    //this->send(msg);
+    //cout<<pSettlementInfo->TradingDay<<endl;
+    //cout<<pSettlementInfo->SequenceNo<< endl;
+    //cout<<pSettlementInfo->SettlementID<< endl;
+    //cout<<pSettlementInfo->Content<< endl;
+    char msg[1024];
+    sprintf(msg,
+            "msg TradingDay|%s SequenceNo|%d SettlementID|%d Content|%s",
+            pSettlementInfo->TradingDay,
+            pSettlementInfo->SequenceNo,
+            pSettlementInfo->SettlementID,
+            pSettlementInfo->Content);
+    cout<<msg<<endl;
+    this->send(msg);
     return;
 
 
@@ -488,7 +480,7 @@ void TraderSpi::OnRspQrySettlementInfoConfirm(
 
 void TraderSpi::reqInstruments()
 {
-    if (NULL==this->TradingDay)return;
+    //if (!this->Login)return;
     if (this->queryIns)return;
     this->queryIns = true;
     //cout<<"query ins"<<endl;
@@ -511,7 +503,7 @@ void TraderSpi::reqInstruments()
 }
 
 void TraderSpi::reqSettlementInfoConfirm(){
-    if (NULL==this->TradingDay)return;
+    //if (!this->Login)return;
     CThostFtdcSettlementInfoConfirmField pSettlementInfoConfirm;
     memset(&pSettlementInfoConfirm,0,sizeof(pSettlementInfoConfirm));
     strcpy(pSettlementInfoConfirm.BrokerID,this->userReq.BrokerID);
@@ -532,7 +524,7 @@ void TraderSpi::reqSettlementInfoConfirm(){
     }
 }
 void TraderSpi::reqQrySettlementInfo(){
-    if (NULL==this->TradingDay)return;
+    //if (!this->Login)return;
     CThostFtdcQrySettlementInfoField pQrySettlementInfo;
     memset(&pQrySettlementInfo,0,sizeof(pQrySettlementInfo));
     strcpy(pQrySettlementInfo.BrokerID,this->userReq.BrokerID);
@@ -541,6 +533,10 @@ void TraderSpi::reqQrySettlementInfo(){
     while (true)
     {
         int iResult = this->trApi->ReqQrySettlementInfo(&pQrySettlementInfo,this->getRequestID());
+        cout<<iResult<<endl;
+        char msg[1024];
+        sprintf(msg,"req:%d",iResult);
+        this->send(msg);
         if (!IsFlowControl(iResult))
         {
             break;
@@ -553,7 +549,7 @@ void TraderSpi::reqQrySettlementInfo(){
 }
 void TraderSpi::reqQrySettlementInfoConfirm(){
 
-    if (NULL==this->TradingDay)return;
+    //if (!this->Login)return;
     CThostFtdcQrySettlementInfoConfirmField pQrySettlementInfoConfirm;
     memset(&pQrySettlementInfoConfirm,0,sizeof(pQrySettlementInfoConfirm));
     strcpy(pQrySettlementInfoConfirm.BrokerID,this->userReq.BrokerID);
@@ -574,8 +570,9 @@ void TraderSpi::reqQrySettlementInfoConfirm(){
 }
 void TraderSpi::reqTradingAccount(){
 
-    cout <<"Td connected "<<this->TradingDay << endl;
-    if (NULL==this->TradingDay)return;
+    //cout<<"login:"<<this->Login<<endl;
+    //if (!this->Login)return;
+    //cout<<"req trading Account"<<endl;
     CThostFtdcQryTradingAccountField pQryTradingAccount;
     memset(&pQryTradingAccount,0,sizeof(pQryTradingAccount));
     strcpy(pQryTradingAccount.AccountID,this->userReq.UserID);
@@ -600,7 +597,7 @@ void TraderSpi::reqTradingAccount(){
 
 void TraderSpi::reqInvestorPosition(const char * ins){
     //return;
-    if (NULL==this->TradingDay)return;
+    //if (!this->Login)return;
     CThostFtdcQryInvestorPositionField pQryInvestorPosition;
     memset(&pQryInvestorPosition,0,sizeof(pQryInvestorPosition));
     strcpy(pQryInvestorPosition.InvestorID,this->userReq.UserID);
@@ -623,7 +620,7 @@ void TraderSpi::reqInvestorPosition(const char * ins){
 
 void TraderSpi::reqInvestorPositionDetail(const char * ins){
 
-    if (NULL==this->TradingDay)return;
+    //if (!this->Login)return;
     CThostFtdcQryInvestorPositionDetailField pInvestorPositionDetail;
     memset(&pInvestorPositionDetail,0,sizeof(pInvestorPositionDetail));
     strcpy(pInvestorPositionDetail.BrokerID,this->userReq.BrokerID);
@@ -647,7 +644,7 @@ void TraderSpi::reqInvestorPositionDetail(const char * ins){
 
 void TraderSpi::sendOrderClose(const char * ins){
 
-    if (NULL==this->TradingDay)return;
+    //if (!this->Login)return;
     CThostFtdcInstrumentField insinfo = this->mapInstrument[ins];
     cout<<"close "<<ins<<endl;
     CThostFtdcInputOrderField order;
@@ -689,7 +686,7 @@ void TraderSpi::sendOrderClose(const char * ins){
 
 void TraderSpi::sendOrderOpen(const char *ins, const char *dir,const double price){
 
-    if (NULL==this->TradingDay)return;
+    //if (!this->Login)return;
     CThostFtdcInstrumentField insinfo = this->mapInstrument[ins];
     //cout<<insinfo.InstrumentName<<endl;
     cout<<"open "<<ins<<endl;

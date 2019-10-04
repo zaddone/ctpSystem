@@ -59,7 +59,8 @@ private:
     const char * path;
     void stop();
     void reqUserLogin();
-    const char * TradingDay;
+    char TradingDay[8];
+    bool Login;
     const char * Addr;
     void subscribeMarketData(char *ins);
 

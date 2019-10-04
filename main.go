@@ -1,9 +1,9 @@
 package main
 import(
 	"fmt"
-	"os"
-	"log"
-	"net"
+	//"os"
+	//"log"
+	//"net"
 	"flag"
 	//"time"
 	"strings"
@@ -29,13 +29,14 @@ var (
 	//Farmat = "20060102T15:04:05"
 	Cache = cache.NewCache()
 	//DefaultAddr = config.Conf.DefAdd
+	TraderChan  = make(chan []byte,100)
+	MarketChan  = make(chan []byte,100)
 )
 func Runserver(){
 	_,md := filepath.Split(config.Conf.MdServer)
 	mdAddr = "/tmp/"+ md
 	_,tr := filepath.Split(config.Conf.TrServer)
 	traderAddr = "/tmp/"+ tr
-
 	for k,v := range config.Conf.User{
 		go v.RunMd(
 			config.Conf.MdServer,
@@ -69,41 +70,52 @@ func init(){
 
 	Router.GET("/wrun",func(c *gin.Context){
 		words := strings.Join(strings.Split(c.DefaultQuery("word",""),"_")," ")
-		err = UnixSend(mdAddr+"_"+c.DefaultQuery("user",config.Conf.DefaultUser),[]byte(words))
-		if err != nil {
-			c.JSON(http.StatusOK,gin.H{"msg":err,"word":words})
-		}else{
-			c.JSON(http.StatusOK,gin.H{"msg":"Success","word":words})
+		if len(words) == 0 {
+			c.JSON(http.StatusOK,gin.H{"msg":"Word is nil","word":words})
+			return
 		}
+		u := config.Conf.User[c.DefaultQuery("user",config.Conf.DefaultUser)]
+		if u== nil {
+			c.JSON(http.StatusOK,gin.H{"msg":"Fount not","word":words})
+			return
+		}
+		u.SendMd([]byte(words))
+		c.JSON(http.StatusOK,gin.H{"msg":"Success","word":words})
 	})
 	Router.GET("/trun",func(c *gin.Context){
-		//words := c.DefaultQuery("word","")
 		words := strings.Join(strings.Split(c.DefaultQuery("word",""),"_")," ")
-		addr := traderAddr+"_"+c.DefaultQuery("user",config.Conf.DefaultUser)
-		err = UnixSend(addr,[]byte(words))
-		if err != nil {
-			c.JSON(http.StatusOK,gin.H{"msg":err,"word":words})
-		}else{
-			c.JSON(http.StatusOK,gin.H{"msg":"Success","word":words,"addr":addr})
+		if len(words) == 0 {
+			c.JSON(http.StatusOK,gin.H{"msg":"Word is nil","word":words})
+			return
 		}
+		u := config.Conf.User[c.DefaultQuery("user",config.Conf.DefaultUser)]
+		if u== nil {
+			c.JSON(http.StatusOK,gin.H{"msg":"Fount not","word":words})
+			return
+		}
+		u.SendTr([]byte(words))
+		c.JSON(http.StatusOK,gin.H{"msg":"Success","word":words,"user":u})
 	})
-
 	go Router.Run(config.Conf.Port)
 	fmt.Println("start")
-
 	//taddr := getAddr(config.Conf.Taddr)
 	//maddr := getAddr(config.Conf.Maddr)
 	//fmt.Println(taddr,maddr)
 	//go UnixServer(*traderAddr,RouterTrader)
 	//go UnixServer(*mdAddr,RouterMarket)
+	Def := config.Conf.User[config.Conf.DefaultUser]
 	go cache.Send(func(k *cache.MsgKey){
 		//return
 		if k.T{
-			UnixSend(traderAddr+config.Conf.DefaultUser,k.DB)
+			Def.SendTr(k.DB)
+			//UnixSend(traderAddr+config.Conf.DefaultUser,k.DB)
 		}else{
-			UnixSend(mdAddr+config.Conf.DefaultUser,k.DB)
+			Def.SendMd(k.DB)
+			//UnixSend(mdAddr+config.Conf.DefaultUser,k.DB)
 		}
 	})
+	go runRouterMarket()
+	go runRouterTrader()
 }
 
 func main(){
@@ -125,28 +137,48 @@ func ConvertToString(src string, srcCode string, tagCode string) string {
 	return result
 }
 
-func RouterTrader(path string,db []byte){
-	//fmt.Println(string(db))
-	dbs := strings.Split(string(db)," ")
-	//fmt.Println("trader",dbs)
-	switch(dbs[0]){
-	case "ins":
-		err := DB.Batch(func(t *bolt.Tx)error{
-			_,err := t.CreateBucketIfNotExists([]byte(dbs[1]))
-			return err
-		})
-		if err != nil {
-			panic(err)
+func RouterTrader(db []byte){
+	TraderChan<-db
+}
+func runRouterTrader(){
+	for{
+		db:=<-TraderChan
+		dbs := strings.Split(string(db)," ")
+		//fmt.Println("trader",dbs)
+		//fmt.Println(dbs,"<-------------",string(db))
+		switch(dbs[0]){
+		case "ins":
+			err := DB.Batch(func(t *bolt.Tx)error{
+				_,err := t.CreateBucketIfNotExists([]byte(dbs[1]))
+				return err
+			})
+			if err != nil {
+				panic(err)
+			}
+			for _,v := range config.Conf.User{
+				//fmt.Println("<-------------",string(db))
+				v.SendMd(db)
+			}
+			//fmt.Println("<-------------")
+
+			//err = UnixSend(mdAddr+"_"+strings.Split(path,"_")[1],db)
+			//if err != nil {
+			//	log.Println(dbs[1],err)
+			//}
+		default:
+			fmt.Println(ConvertToString(string(db),"gbk","utf-8"))
 		}
-		err = UnixSend(mdAddr+"_"+strings.Split(path,"_")[1],db)
-		if err != nil {
-			log.Println(dbs[1],err)
-		}
-	default:
-		fmt.Println(ConvertToString(string(db),"gbk","utf-8"))
+
+		//fmt.Println("------------->",len(TraderChan))
+
 	}
 }
-func RouterMarket(path string,db []byte){
+func RouterMarket(db []byte){
+	MarketChan<-db
+}
+func runRouterMarket(){
+	for{
+		db:=<-MarketChan
 	dbs := strings.Split(string(db)," ")
 	//fmt.Println("market",dbs)
 	switch(dbs[0]){
@@ -154,7 +186,12 @@ func RouterMarket(path string,db []byte){
 		err := DB.View(func(t *bolt.Tx)error{
 			return t.ForEach(
 				func(name []byte,b *bolt.Bucket)error{
-				return UnixSend(path,append(append(db,' '),name...))
+				db_ := append(append(db,' '),name...)
+				for _,v := range config.Conf.User{
+					v.SendMd(db_)
+				}
+				return nil
+				//return UnixSend(path,append(append(db,' '),name...))
 			})
 		})
 		if err != nil {
@@ -172,46 +209,47 @@ func RouterMarket(path string,db []byte){
 	default:
 		fmt.Println(ConvertToString(string(db),"gbk","utf-8"))
 	}
+	}
 }
-func UnixSend(raddr string,db []byte) error {
-	//fmt.Println("send",raddr)
-	rAddr, err := net.ResolveUnixAddr("unixgram",raddr)
-	if err != nil {
-		return err
-	}
-	c,err := net.DialUnix("unixgram",nil,rAddr)
-	if err != nil {
-		return err
-	}
-	_,err = c.Write(db)
-	c.Close()
-	return err
-}
-func UnixServer(local string,hand func([]byte)){
-	err := os.Remove(local)
-	if err != nil {
-		fmt.Println(err)
-	}
-	lAddr, err := net.ResolveUnixAddr("unixgram",local)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	ln, err := net.ListenUnixgram("unixgram", lAddr )
-	if err!= nil {
-		fmt.Println(err)
-		return
-	}
-	for{
-		var buf [1024]byte
-		n,_,err := ln.ReadFromUnix(buf[:])
-		if err != nil {
-			panic(err)
-		}
-
-		go hand(buf[:n])
-		//fmt.Println(local,ConvertToString(string(buf[:n]),"gbk","utf-8"))
-
-	}
-	ln.Close()
-}
+//func UnixSend(raddr string,db []byte) error {
+//	//fmt.Println("send",raddr)
+//	rAddr, err := net.ResolveUnixAddr("unixgram",raddr)
+//	if err != nil {
+//		return err
+//	}
+//	c,err := net.DialUnix("unixgram",nil,rAddr)
+//	if err != nil {
+//		return err
+//	}
+//	_,err = c.Write(db)
+//	c.Close()
+//	return err
+//}
+//func UnixServer(local string,hand func([]byte)){
+//	err := os.Remove(local)
+//	if err != nil {
+//		fmt.Println(err)
+//	}
+//	lAddr, err := net.ResolveUnixAddr("unixgram",local)
+//	if err != nil {
+//		fmt.Println(err)
+//		return
+//	}
+//	ln, err := net.ListenUnixgram("unixgram", lAddr )
+//	if err!= nil {
+//		fmt.Println(err)
+//		return
+//	}
+//	for{
+//		var buf [1024]byte
+//		n,_,err := ln.ReadFromUnix(buf[:])
+//		if err != nil {
+//			panic(err)
+//		}
+//
+//		go hand(buf[:n])
+//		//fmt.Println(local,ConvertToString(string(buf[:n]),"gbk","utf-8"))
+//
+//	}
+//	ln.Close()
+//}

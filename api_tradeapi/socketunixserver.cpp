@@ -24,15 +24,16 @@ socketUnixServer::socketUnixServer(const char * path)
     char p[1024];
     strcpy(p,path);
     strcat(p,"_");
-    cout<<p<<endl;
+    //cout<<p<<endl;
     this->addr.sun_family = AF_UNIX;
     strcpy(this->addr.sun_path, p);
 
-    this->over = false;
+    //this->over = false;
     //this->receive();
 }
 void socketUnixServer::send(const char *data){
-//    cout<<data<<endl;
+    cout<<data<<endl;
+    return;
     int sock;
     //sockaddr_un addr;
     //socklen_t addrlen;
@@ -55,11 +56,11 @@ void socketUnixServer::receive(){
 
     bind(sock, (sockaddr*)&this->addrTo, sizeof(this->addrTo));
 
-    while(!this->over){
+    while(true){
       memset(buf, 0, sizeof(buf));
       n = recv(sock, buf, sizeof(buf) - 1, 0);
       this->routeHand(buf);
-      printf("recv:%s\n", buf);
+      //printf("recv:%s\n", buf);
     }
     printf("end socket server");
     close(sock);

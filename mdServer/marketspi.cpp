@@ -36,7 +36,8 @@ MarketSpi::MarketSpi(
         const char *addr,
         const char * path):socketUnixServer(path){
     this->mdApi = NULL;
-    this->TradingDay = NULL;
+    //this->TradingDay = NULL;
+    //this->Login = false;
     this->path = path;
     this->Addr = addr;
     this->initMap();
@@ -74,7 +75,7 @@ void MarketSpi::stop(){
     this->mdApi->RegisterSpi(NULL);
     this->mdApi->Release();
     this->mdApi = NULL;
-    this->over =  true;
+    //this->over =  true;
 }
 
 void MarketSpi::run(){
@@ -105,7 +106,7 @@ void MarketSpi::routeHand(const char * data){
     //    cout<<"market:"<<data<<endl;
     //    return;
     //}
-    //cout<<"market:"<<data<<endl;
+    cout<<"md---->"<<data<<endl;
     char db[1024];
     strcpy(db,data);
 
@@ -147,6 +148,7 @@ void MarketSpi::routeHand(const char * data){
         printf("default %s",data);
         break;
     }
+    cout<<"md end"<<endl;
 
 }
 
@@ -196,7 +198,9 @@ void MarketSpi::OnRspUserLogin(
         //this->run();
         return;
     }
-    this->TradingDay = this->mdApi->GetTradingDay();
+    strcpy(this->TradingDay,this->mdApi->GetTradingDay());
+    //this->Login = true;
+    //this->TradingDay = this->mdApi->GetTradingDay();
     cout<<"ins"<<endl;
 }
 
@@ -240,10 +244,12 @@ void MarketSpi::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarke
 
 void MarketSpi::subscribeMarketData(char * ins){
 
-    if (this->TradingDay == NULL)return;
+    //if (!this->Login)return;
+
     char *ppInstrumentID[] = {ins};
     while (true)
     {
+        cout<<ins<<endl;
         int iResult = this->mdApi->SubscribeMarketData(ppInstrumentID,1);
         if (!IsFlowControl(iResult))
         {

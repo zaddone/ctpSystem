@@ -79,7 +79,6 @@ private:
     map<string , int >mapstring;
     map<string, CThostFtdcInstrumentField >mapInstrument;
     void run();
-    void run(const char * addr);
     void initMap();
     void Join();
     void setUserReg(
@@ -102,7 +101,8 @@ private:
     //void investorPosition(const char * ins);
     const char * path;
     bool queryIns;
-    const char * TradingDay;
+    //bool Login;
+    //char TradingDay[8];
     const char * Addr;
 
 };
