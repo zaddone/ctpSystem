@@ -64,7 +64,7 @@ void TraderSpi::routeHand(const char *data){
     char db[1024];
     strcpy(db,data);
 
-    cout<<"db "<<db<<endl;
+    //cout<<"db "<<db<<endl;
     char *p;
     char sep[] = " ";
     char str[100][1024];
@@ -108,7 +108,7 @@ void TraderSpi::routeHand(const char *data){
     }
         break;
     case 7:{
-        cout<<"db:"<<db<<endl;
+        //cout<<"db:"<<db<<endl;
         this->reqTradingAccount();
     }
         break;
@@ -434,7 +434,7 @@ void TraderSpi::OnRspQrySettlementInfo(
         return;
     }
 
-    //cout<<"bIsLast"<<bIsLast<<endl;
+    cout<<"OnRspQrySettlementInfo:"<<bIsLast<<endl;
     if (!bIsLast)return;
     //char msg[8192];
 
@@ -469,6 +469,8 @@ void TraderSpi::OnRspQrySettlementInfoConfirm(
         return;
     }
     if (!bIsLast)return;
+
+    cout<<"OnRspQrySettlementInfoConfirm:"<<bIsLast<<endl;
     //char msg[8192];
     if (!pSettlementInfoConfirm)return;
     cout << pSettlementInfoConfirm-> ConfirmDate << endl;

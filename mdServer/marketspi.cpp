@@ -106,7 +106,7 @@ void MarketSpi::routeHand(const char * data){
     //    cout<<"market:"<<data<<endl;
     //    return;
     //}
-    cout<<"md---->"<<data<<endl;
+    //cout<<"md---->"<<data<<endl;
     char db[1024];
     strcpy(db,data);
 
@@ -131,7 +131,6 @@ void MarketSpi::routeHand(const char * data){
     }
         break;
     case 2:{
-
         //cout<<"db:"<<str[1]<<str[2]<<str[3]<<str[4]<<endl;
         this->setUserReg(str[1],str[2],str[3],str[4]);
         this->Addr = str[5];
@@ -148,7 +147,7 @@ void MarketSpi::routeHand(const char * data){
         printf("default %s",data);
         break;
     }
-    cout<<"md end"<<endl;
+    //cout<<"md end"<<endl;
 
 }
 

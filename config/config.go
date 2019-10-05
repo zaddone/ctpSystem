@@ -66,7 +66,6 @@ func runComm(
 	word []string,
 	send chan []byte,
 	hand func([]byte)){
-
 	//fmt.Println(path,word)
 	ctx,cancel := context.WithCancel(context.Background())
 	cmd := exec.CommandContext(ctx,path,word...)
@@ -81,7 +80,7 @@ func runComm(
 		panic(err)
 	}
 	//var isPrefix bool
-	ch := make(chan int,1)
+	ch := make(chan bool,1)
 	go func(addr string){
 		var line []byte
 		//line,isPrefix,err = buf.ReadLine()
@@ -90,12 +89,12 @@ func runComm(
 		if err != nil {
 			fmt.Println(err)
 			cancel()
-			ch<-1
+			ch<-true
 			return
 		}
 		fmt.Println("conn",string(line))
-		hand(line)
-		ch <- 2
+		//hand(line)
+		ch <- true
 		go func(){
 			rAddr, err := net.ResolveUnixAddr("unixgram",addr)
 			if err != nil {
@@ -111,7 +110,7 @@ func runComm(
 			sum:=0
 			var n int
 			for db:= range send {
-				fmt.Println(addr,sum,"<---------------",string(db))
+				//fmt.Println(addr,sum,"<---------------",string(db))
 				n,err = c.Write(db)
 				if err != nil {
 					//panic(err)
@@ -119,7 +118,7 @@ func runComm(
 					//break
 				}
 				sum+=n
-				fmt.Println(addr,sum)
+				//fmt.Println(addr,sum)
 			}
 			fmt.Println("close--------------->",addr)
 			c.Close()
@@ -137,11 +136,13 @@ func runComm(
 		}
 	}(word[5])
 	//defer log.Println(path,"end")
+
 	select{
-	case t:=<-ch:
-		if t == 1{
-			return
-		}
+	case <-ch:
+		//break
+		//if t == 1{
+		//	return
+		//}
 	case <-time.After(time.Second*30):
 		log.Println("time out")
 		cancel()
@@ -151,7 +152,7 @@ func runComm(
 	close(send)
 }
 func (self *UserInfo) SendMd(db []byte) {
-	fmt.Println("md",len(self.sendMd),string(db))
+	//fmt.Println("md",len(self.sendMd),string(db))
 	self.sendMd <- db
 	//select{
 	//case self.sendMd <- db:
@@ -160,7 +161,7 @@ func (self *UserInfo) SendMd(db []byte) {
 	//}
 }
 func (self *UserInfo) SendTr(db []byte) {
-	fmt.Println("tr",len(self.sendTr),string(db))
+	//fmt.Println("tr",len(self.sendTr),string(db))
 	self.sendTr <- db
 	//select{
 	//case self.sendTr <- db:
