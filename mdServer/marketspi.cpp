@@ -94,19 +94,21 @@ void MarketSpi::run(){
     //mSpi->mdApi->Join();
 }
 void MarketSpi::initMap(){
+    this->mapstring["help"] = 999;
     this->mapstring["stop"] = 100;
     this->mapstring["ins"] = 1;
     this->mapstring["config"] = 2;
     this->mapstring["addr"] = 3;
 }
+void MarketSpi::help(){
+    map<string , int>::iterator iter;
+    for(iter = mapstring.begin(); iter != mapstring.end(); iter++)
+          cout<<"help:"<<iter->first<<endl;
+
+}
 
 void MarketSpi::routeHand(const char * data){
 
-    //if (this->TradingDay== NULL){
-    //    cout<<"market:"<<data<<endl;
-    //    return;
-    //}
-    //cout<<"md---->"<<data<<endl;
     char db[1024];
     strcpy(db,data);
 
@@ -122,32 +124,37 @@ void MarketSpi::routeHand(const char * data){
         i++;
     }
     switch (this->mapstring[str[0]]){
+    case 999:{
+        this->help();
+        break;
+    }
     case 100:{
         this->stop();
-    }
         break;
+    }
     case 1:{
         this->subscribeMarketData(str[1]);
-    }
         break;
+    }
     case 2:{
         //cout<<"db:"<<str[1]<<str[2]<<str[3]<<str[4]<<endl;
         this->setUserReg(str[1],str[2],str[3],str[4]);
         this->Addr = str[5];
+        //this->stop();
         this->run();
-    }
         break;
+    }
     case 3:{
         //this->setUserReg(str[1],str[2],str[3],str[4]);
         this->Addr = str[1];
+        //this->stop();
         this->run();
-    }
         break;
+    }
     default:
         printf("default %s",data);
         break;
     }
-    //cout<<"md end"<<endl;
 
 }
 
@@ -155,12 +162,10 @@ int MarketSpi::getRequestID(){
     this->requestID++;
     return this->requestID;
 }
+
 void MarketSpi::OnFrontConnected(){
     cout<<"conn"<<endl;
     this->reqUserLogin();
-    //int res = this->mdApi->ReqUserLogin(&this->userReq,this->getRequestID());
-    //if (0==res)
-    //cout  << "Md connected"<< this->mdApi->GetTradingDay() << endl;
 }
 
 void MarketSpi::reqUserLogin(){
@@ -179,7 +184,6 @@ void MarketSpi::reqUserLogin(){
 }
 
 void MarketSpi::OnFrontDisconnected(int nReason){
-
     cout<<"disconnected:"<<nReason<<endl;
     this->stop();
 }
@@ -189,45 +193,22 @@ void MarketSpi::OnRspUserLogin(
         CThostFtdcRspInfoField *pRspInfo,
         int nRequestID,
         bool bIsLast){
-
     cout<<"mk "<<pRspInfo->ErrorID<<endl;
-
     if (pRspInfo && 0!=pRspInfo->ErrorID){
         cout<<pRspInfo->ErrorMsg<<endl;
         //this->run();
         return;
     }
-    strcpy(this->TradingDay,this->mdApi->GetTradingDay());
-    //this->Login = true;
-    //this->TradingDay = this->mdApi->GetTradingDay();
-    cout<<"ins"<<endl;
+
+    char trading[20]="TDay ";
+    strcat(trading,this->mdApi->GetTradingDay());
+    this->send(trading);
+    //strcpy(this->TradingDay,this->mdApi->GetTradingDay());
+    //cout<<"ins"<<endl;
+
 }
 
-//void MarketSpi::OnRspUnSubMarketData(
-//        CThostFtdcSpecificInstrumentField *pSpecificInstrument,
-//        CThostFtdcRspInfoField *pRspInfo,
-//        int nRequestID,
-//        bool bIsLast){
-//
-//
-//}
-//void MarketSpi::OnRspSubMarketData(
-//        CThostFtdcSpecificInstrumentField *pSpecificInstrument,
-//        CThostFtdcRspInfoField *pRspInfo,
-//        int nRequestID,
-//        bool bIsLast){
-//    //printf("%s %s\n",pSpecificInstrument->InstrumentID,pRspInfo->ErrorMsg);
-//
-//}
-
 void MarketSpi::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData){
-    //printf("%s %s %d %lf %lf\n",
-    //       pDepthMarketData->InstrumentID,
-    //       pDepthMarketData->UpdateTime,
-    //       pDepthMarketData->UpdateMillisec,
-    //       pDepthMarketData->AskPrice1,
-    //       pDepthMarketData->BidPrice1
-    //       );
 
     char str[8192];
     sprintf(str,"market %s,%sT%s,%lf,%lf",
@@ -236,14 +217,12 @@ void MarketSpi::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarke
            pDepthMarketData->UpdateTime,
            pDepthMarketData->AskPrice1,
            pDepthMarketData->BidPrice1
-            );
-    //cout<<str<<endl;
+    );
     this->send(str);
+
 }
 
 void MarketSpi::subscribeMarketData(char * ins){
-
-    //if (!this->Login)return;
 
     char *ppInstrumentID[] = {ins};
     while (true)
@@ -251,12 +230,9 @@ void MarketSpi::subscribeMarketData(char * ins){
         cout<<ins<<endl;
         int iResult = this->mdApi->SubscribeMarketData(ppInstrumentID,1);
         if (!IsFlowControl(iResult))
-        {
             break;
-        }
         else
-        {
             sleep(1);
-        }
     }
+
 }

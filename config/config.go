@@ -35,8 +35,8 @@ type UserInfo struct {
 	sendMd chan []byte
 }
 func (self *UserInfo)RunTr(path string,local string,hand func([]byte)){
-	self.sendTr = make(chan []byte,100)
 	for{
+	self.sendTr = make(chan []byte,100)
 	runComm(path,[]string{
 			self.BrokerID,
 			self.UserID,
@@ -48,8 +48,8 @@ func (self *UserInfo)RunTr(path string,local string,hand func([]byte)){
 	}
 }
 func (self *UserInfo)RunMd(path string,local string,hand func([]byte)){
-	self.sendMd = make(chan []byte,100)
 	for{
+	self.sendMd = make(chan []byte,100)
 	runComm(path,[]string{
 			self.BrokerID,
 			self.UserID,
@@ -85,13 +85,18 @@ func runComm(
 		var line []byte
 		//line,isPrefix,err = buf.ReadLine()
 		line,err = buf.ReadBytes('\n')
-		line = line[:len(line)-1]
 		if err != nil {
 			fmt.Println(err)
 			cancel()
 			ch<-true
 			return
 		}
+		le := len(line)
+		if le==0{
+			ch<-true
+			return
+		}
+		line = line[:len(line)-1]
 		fmt.Println("conn",string(line))
 		//hand(line)
 		ch <- true
@@ -146,7 +151,7 @@ func runComm(
 	case <-time.After(time.Second*30):
 		log.Println("time out")
 		cancel()
-		return
+		//return
 	}
 	cmd.Wait()
 	close(send)
@@ -170,135 +175,6 @@ func (self *UserInfo) SendTr(db []byte) {
 	//}
 }
 
-//func UnixSend(raddr string,db chan string) error {
-//	//fmt.Println("send",raddr)
-//	rAddr, err := net.ResolveUnixAddr("unixgram",raddr)
-//	if err != nil {
-//		return err
-//	}
-//	c,err := net.DialUnix("unixgram",nil,rAddr)
-//	if err != nil {
-//		return err
-//	}
-//	for{
-//		_,err = c.Write([]byte(<-db))
-//		if err != nil {
-//			log.Println(err)
-//			break
-//		}
-//	}
-//	c.Close()
-//	return err
-//}
-//func runComm_(path string,word []string,hand func(string,[]byte)){
-//	ctx,cancel := context.WithCancel(context.Background())
-//	cmd := exec.CommandContext(ctx,path,word...)
-//	out,err := cmd.StdoutPipe()
-//	if err != nil {
-//		panic(err)
-//	}
-//	//buf := bufio.NewReader(out)
-//	err = cmd.Start()
-//	if err != nil {
-//		panic(err)
-//	}
-//	//var isPrefix bool
-//	ch := make(chan int,1)
-//	addr := word[5]
-//	go func(){
-//		var line [4096]byte
-//		var err error
-//		var n int
-//		n,err = out.Read(line[:])
-//		//line,isPrefix,err = buf.ReadLine()
-//		if err != nil {
-//			log.Println(err)
-//			cancel()
-//			ch<-1
-//			return
-//		}
-//		log.Println(addr,string(line[:n]))
-//		//hand(addr,line)
-//		ch <- 2
-//		for{
-//			n,err = out.Read(line[:])
-//			//line,err = buf.ReadBytes('\n')
-//			//line = line[:len(line)-1]
-//			if err != nil {
-//				log.Println(addr,err)
-//				cancel()
-//				return
-//			}
-//			log.Println(addr,string(line[:n]))
-//		}
-//	}()
-//	select{
-//	case t:=<-ch:
-//		if t == 1{
-//			return
-//		}
-//	case <-time.After(time.Second*30):
-//		log.Println("time out")
-//		cancel()
-//		return
-//	}
-//	//ctx.Done()
-//	local := addr + "_"
-//	err = os.Remove(local)
-//	if err != nil {
-//		fmt.Println(err)
-//	}
-//	lAddr, err := net.ResolveUnixAddr("unixgram",local)
-//	if err != nil {
-//		fmt.Println(err)
-//		return
-//	}
-//	ln, err := net.ListenUnixgram("unixgram", lAddr )
-//	if err!= nil {
-//		fmt.Println(err)
-//		return
-//	}
-//	go func (){
-//		for {
-//			var buf [4096]byte
-//			n,err := ln.Read(buf[:])
-//			if err != nil {
-//				log.Println(addr,err)
-//				return
-//				//panic(err)
-//			}
-//			go hand(addr,buf[:n])
-//		}
-//	}()
-//	cmd.Wait()
-//	ln.Close()
-//
-//}
-//func UnixServer(local,addr string,hand func(string,[]byte)){
-//	err := os.Remove(local)
-//	if err != nil {
-//		fmt.Println(err)
-//	}
-//	lAddr, err := net.ResolveUnixAddr("unixgram",local)
-//	if err != nil {
-//		fmt.Println(err)
-//		return
-//	}
-//	ln, err := net.ListenUnixgram("unixgram", lAddr )
-//	if err!= nil {
-//		fmt.Println(err)
-//		return
-//	}
-//	for{
-//		var buf [1024]byte
-//		n,_,err := ln.ReadFromUnix(buf[:])
-//		if err != nil {
-//			panic(err)
-//		}
-//		go hand(addr,buf[:n])
-//	}
-//	ln.Close()
-//}
 type Config struct {
 	User map[string]*UserInfo
 	DefaultUser string

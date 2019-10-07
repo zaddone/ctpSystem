@@ -16,9 +16,9 @@ TraderSpi::TraderSpi(const char * path):socketUnixServer(path){
     //    mkdir(path,0777);
     //}
     this->path = path;
-
     memset(&this->userReq,0,sizeof(this->userReq));
     this->initMap();
+
 }
 TraderSpi::TraderSpi(
         const char * brokerID,
@@ -42,7 +42,9 @@ TraderSpi::TraderSpi(
 
 void TraderSpi::initMap(){
     //this->mapstring["ins"] = 1;
+    this->mapstring["help"] = 999;
     this->mapstring["stop"] = 100;
+    this->mapstring["Instrument"] = 1;
     this->mapstring["config"] = 2;
     this->mapstring["addr"] = 3;
     this->mapstring["ReqQrySettlementInfo"] = 4;
@@ -61,9 +63,9 @@ void TraderSpi::routeHand(const char *data){
     //    cout<<"trader:"<<data<<endl;
     //    return;
     //}
+    //this->reqInstruments();
     char db[1024];
     strcpy(db,data);
-
     //cout<<"db "<<db<<endl;
     char *p;
     char sep[] = " ";
@@ -77,58 +79,64 @@ void TraderSpi::routeHand(const char *data){
         i++;
     }
     switch (this->mapstring[str[0]]){
+    case 1:{
+        this->reqInstruments();
+        break;
+    }
+    case 999:{
+        this->help();
+        break;
+    }
     case 100:{
         this->stop();
         cout<<"stop"<<endl;
-    }
         break;
+    }
     case 2:{
         this->setUserReg(str[1],str[2],str[3],str[4]);
         this->Addr = str[5];
         this->run();
-    }
         break;
+    }
     case 3:{
         //this->setUserReg(str[1],str[2],str[3],str[4]);
         this->Addr = str[1];
         this->run();
-    }
         break;
+    }
     case 4:{
-
         this->reqQrySettlementInfo();
-    }
         break;
+    }
     case 5:{
         this->reqSettlementInfoConfirm();
-    }
         break;
+    }
     case 6:{
         this->reqQrySettlementInfoConfirm();
-    }
         break;
+    }
     case 7:{
         //cout<<"db:"<<db<<endl;
         this->reqTradingAccount();
-    }
         break;
+    }
     case 8:{
         char * ins=NULL;
         if (i>1){
             ins = str[1];
         }
         this->reqInvestorPositionDetail(ins);
-    }
         break;
+    }
     case 9:{
         char * ins=NULL;
         if (i>1){
             ins = str[1];
         }
         this->reqInvestorPosition(ins);
-    }
         break;
-
+    }
     case 10:{
         char *dis;
         if (i>1)dis= str[2];
@@ -137,15 +145,16 @@ void TraderSpi::routeHand(const char *data){
             pr = atof(str[3]);
         }
         this->sendOrderOpen(str[1],dis,pr);
-    }
         break;
+    }
     case 11:{
         this->sendOrderClose(str[1]);
-    }
         break;
-    default:
+    }
+    default:{
         printf("default %s %s end",data,str[0]);
         break;
+    }
     }
 }
 
@@ -265,15 +274,22 @@ void TraderSpi::OnRspOrderInsert(
     }
     cout<<"order insert"<<pInputOrder->OrderRef<<endl;
 }
+void TraderSpi::help(){
+    map<string , int>::iterator iter;
+    for(iter = mapstring.begin(); iter != mapstring.end(); iter++)
+          //cout<<iter->first<<endl;
+          cout<<"help:"<<iter->first<<endl;
+
+}
 
 void TraderSpi::stop(){
-    if (this->trApi== NULL) return;
+    if (this->trApi == NULL) return;
+    cout<<"stop ok 3"<<endl;
     this->trApi->RegisterSpi(NULL);
+    cout<<"stop ok 2"<<endl;
     this->trApi->Release();
-    //this->trApi->Join();
-    //this->Join();
+    cout<<"stop ok 1"<<endl;
     this->trApi = NULL;
-    //this->over =  true;
     cout<<"stop ok"<<endl;
 }
 void TraderSpi::Join(){
@@ -298,7 +314,7 @@ void TraderSpi::OnRspQryInstrument(
     //cout<< pInstrument->InstrumentName<<endl;
     //cout<< pInstrument->InstrumentID<<endl;
     this->mapInstrument[pInstrument->InstrumentID] = *pInstrument;
-    char db[100] = "ins ";
+    char db[24] = "ins ";
     strcat(db,pInstrument->InstrumentID);
     //cout<< "ins "<<pInstrument->InstrumentID <<endl;
     this->send(db);
@@ -358,8 +374,8 @@ void TraderSpi::OnRspUserLogin(
         strcat(trading,this->trApi->GetTradingDay());
         this->send(trading);
         //strcpy(this->TradingDay,this->trApi->GetTradingDay());
-        cout <<"Td connected "<< trading << endl;
-        this->reqInstruments();
+        //cout <<"Td connected "<< trading << endl;
+        //this->reqInstruments();
     }else if (7 == pRspInfo->ErrorID){
         this->swapPassword();
         //TThostFtdcBrokerIDType bakPass;
@@ -434,7 +450,7 @@ void TraderSpi::OnRspQrySettlementInfo(
         return;
     }
 
-    cout<<"OnRspQrySettlementInfo:"<<bIsLast<<endl;
+    //cout<<"OnRspQrySettlementInfo:"<<bIsLast<<endl;
     if (!bIsLast)return;
     //char msg[8192];
 
@@ -470,7 +486,7 @@ void TraderSpi::OnRspQrySettlementInfoConfirm(
     }
     if (!bIsLast)return;
 
-    cout<<"OnRspQrySettlementInfoConfirm:"<<bIsLast<<endl;
+    //cout<<"OnRspQrySettlementInfoConfirm:"<<bIsLast<<endl;
     //char msg[8192];
     if (!pSettlementInfoConfirm)return;
     cout << pSettlementInfoConfirm-> ConfirmDate << endl;

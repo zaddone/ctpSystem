@@ -95,6 +95,7 @@ private:
     void reqInvestorPosition(const char *ins);
     void reqInvestorPositionDetail(const char * ins);
 
+    void help();
     void stop();
     void sendOrderOpen(const char * ins, const char *dir, const double price=0);
     void sendOrderClose(const char * ins);

@@ -67,7 +67,6 @@ func init(){
 	Router.GET("/",func(c *gin.Context){
 		c.HTML(http.StatusOK,"index.tmpl",nil)
 	})
-
 	Router.GET("/wrun",func(c *gin.Context){
 		words := strings.Join(strings.Split(c.DefaultQuery("word",""),"_")," ")
 		if len(words) == 0 {
@@ -120,11 +119,8 @@ func init(){
 
 func main(){
 
-	//if config.Conf.RunServer{
 	Runserver()
-	//}
 	select{}
-	//exec.Command()
 
 }
 
@@ -144,8 +140,6 @@ func runRouterTrader(){
 	for{
 		db:=<-TraderChan
 		dbs := strings.Split(string(db)," ")
-		//fmt.Println("trader",dbs)
-		//fmt.Println(dbs,"<-------------",string(db))
 		switch(dbs[0]){
 		case "ins":
 			err := DB.Batch(func(t *bolt.Tx)error{
@@ -156,20 +150,11 @@ func runRouterTrader(){
 				panic(err)
 			}
 			for _,v := range config.Conf.User{
-				//fmt.Println("<-------------",string(db))
 				v.SendMd(db)
 			}
-			//fmt.Println("<-------------")
-
-			//err = UnixSend(mdAddr+"_"+strings.Split(path,"_")[1],db)
-			//if err != nil {
-			//	log.Println(dbs[1],err)
-			//}
 		default:
 			fmt.Println(ConvertToString(string(db),"gbk","utf-8"))
 		}
-
-		//fmt.Println("------------->",len(TraderChan))
 
 	}
 }
@@ -178,7 +163,7 @@ func RouterMarket(db []byte){
 }
 func runRouterMarket(){
 	for{
-		db:=<-MarketChan
+	db:=<-MarketChan
 	dbs := strings.Split(string(db)," ")
 	//fmt.Println("market",dbs)
 	switch(dbs[0]){

@@ -10,24 +10,17 @@
 using namespace std;
 socketUnixServer::socketUnixServer(const char * path)
 {
-
     //strcat(p,path);
     //cout<<path<<endl;
-
-
-
     unlink(path);
     this->addrTo.sun_family = AF_UNIX;
     strcpy(this->addrTo.sun_path, path);
-
-
     char p[1024];
     strcpy(p,path);
     strcat(p,"_");
     //cout<<p<<endl;
     this->addr.sun_family = AF_UNIX;
     strcpy(this->addr.sun_path, p);
-
     //this->over = false;
     //this->receive();
 }
@@ -50,12 +43,9 @@ void socketUnixServer::receive(){
     int n;
 
     sock = socket(AF_UNIX, SOCK_DGRAM, 0);
-
     //addr.sun_family = AF_UNIX;
     //strcpy(addr.sun_path, "/tmp/afu_dgram");
-
     bind(sock, (sockaddr*)&this->addrTo, sizeof(this->addrTo));
-
     while(true){
       memset(buf, 0, sizeof(buf));
       n = recv(sock, buf, sizeof(buf) - 1, 0);

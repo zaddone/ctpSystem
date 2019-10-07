@@ -301,14 +301,14 @@ func (self *Layer) add(c Element) bool {
 		//(self.par.direction != 0) {
 			self.getTemplate()
 
-			//var dis string
-			//if self.tem.Dis {
-			//	dis= "sell"
-			//}else{
-			//	dis= "buy"
-			//}
-			//price := self.tem.can.Val()
-			//fmt.Println(price,dis)
+			var dis string
+			if self.tem.Dis {
+				dis= "sell"
+			}else{
+				dis= "buy"
+			}
+			price := self.tem.can.Val()
+			fmt.Println(price,dis)
 			//KeyChan<-&MsgKey{
 			//	Ins:c.Name(),
 			//	DB:[]byte(fmt.Sprintf(
