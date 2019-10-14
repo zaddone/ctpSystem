@@ -42,6 +42,7 @@ TraderSpi::TraderSpi(
 
 void TraderSpi::initMap(){
     //this->mapstring["ins"] = 1;
+
     this->mapstring["help"] = 999;
     this->mapstring["stop"] = 100;
     this->mapstring["Instrument"] = 1;
@@ -55,6 +56,7 @@ void TraderSpi::initMap(){
     this->mapstring["InvestorPosition"] = 9;
     this->mapstring["open"] = 10;
     this->mapstring["close"] = 11;
+    this->mapstring["OrderInsert"] = 12;
 }
 
 void TraderSpi::routeHand(const char *data){
@@ -138,17 +140,30 @@ void TraderSpi::routeHand(const char *data){
         break;
     }
     case 10:{
-        char *dis;
-        if (i>1)dis= str[2];
-        double pr=0;
-        if (i>2){
-            pr = atof(str[3]);
-        }
-        this->sendOrderOpen(str[1],dis,pr);
+        if (i<6)break;
+        double po,pr;
+        po = atof(str[5]);
+        pr = atof(str[6]);
+        cout<<po<<endl;
+        cout<<pr<<endl;
+        cout<<str[4][0]<<endl;
+        this->sendOrderOpen(str[1],str[2],str[3],str[4][0],po,pr);
         break;
     }
     case 11:{
-        this->sendOrderClose(str[1]);
+        //if (i<3)break;
+        //this->sendOrderClose(str[1],str[2]);
+        break;
+    }
+    case 12:{
+        if (i<5)break;
+        double pr=0;
+        if (i>5){
+            pr = atof(str[5]);
+        }
+        cout<<"order insert"<<endl;
+        this->sendOrderInsert(str[1],str[2],str[3][0],str[4][0],pr);
+        //this->sendOrderClose(str[1],str[2]);
         break;
     }
     default:{
@@ -181,18 +196,53 @@ void TraderSpi::OnRspQryInvestorPosition(
     if (!bIsLast)return;
     if (!pInvestorPosition)return;
     //this->send(pInvestorPosition->InstrumentID);
-    cout<<"InstrumentID:"<<pInvestorPosition->InstrumentID<<endl;
-    cout<<"PositionDate:"<<pInvestorPosition->PositionDate<<endl;
-    cout<<"LongFrozenAmount:"<<pInvestorPosition->LongFrozenAmount<<endl;
-    cout<<"ShortFrozenAmount:"<<pInvestorPosition->ShortFrozenAmount<<endl;
-    cout<<"OpenAmount:"<<pInvestorPosition->OpenAmount<<endl;
-    cout<<"CloseAmount:"<<pInvestorPosition->CloseAmount<<endl;
-    cout<<"PositionCost:"<<pInvestorPosition->PositionCost<<endl;
-    cout<<"UseMargin:"<<pInvestorPosition->UseMargin<<endl;
-    cout<<"Commission:"<<pInvestorPosition->Commission<<endl;
-    cout<<"CloseProfit:"<<pInvestorPosition->CloseProfit<<endl;
-    cout<<"PositionProfit:"<<pInvestorPosition->PositionProfit<<endl;
-    cout<<"TradingDay:"<<pInvestorPosition->TradingDay<<endl;
+    cout<<"msg:InstrumentID 合约代码:"<<pInvestorPosition->InstrumentID<<endl;
+    cout<<"msg:BrokerID 经纪公司代码:"<<pInvestorPosition->BrokerID<<endl;
+    cout<<"msg:InvestorID 投资者代码:"<<pInvestorPosition->InvestorID<<endl;
+    cout<<"msg:PosiDirection 持仓多空方向:"<<pInvestorPosition->PosiDirection<<endl;
+    cout<<"msg:HedgeFlag 投机套保标志:"<<pInvestorPosition->HedgeFlag<<endl;
+    cout<<"msg:PositionDate 持仓日期:"<<pInvestorPosition->PositionDate<<endl;
+    cout<<"msg:YdPosition 上日持仓:"<<pInvestorPosition->YdPosition<<endl;
+    cout<<"msg:Position 今日持仓:"<<pInvestorPosition->Position<<endl;
+    cout<<"msg:LongFrozen 多头冻结:"<<pInvestorPosition->LongFrozen<<endl;
+    cout<<"msg:ShortFrozen 空头冻结:"<<pInvestorPosition->ShortFrozen<<endl;
+    cout<<"msg:LongFrozenAmount 开仓冻结金额:"<<pInvestorPosition->LongFrozenAmount<<endl;
+    cout<<"msg:ShortFrozenAmount 开仓冻结金额:"<<pInvestorPosition->ShortFrozenAmount<<endl;
+    cout<<"msg:OpenVolume 开仓量:"<<pInvestorPosition->OpenVolume<<endl;
+    cout<<"msg:CloseVolume 平仓量:"<<pInvestorPosition->CloseVolume<<endl;
+    cout<<"msg:OpenAmount 开仓金额:"<<pInvestorPosition->OpenAmount<<endl;
+    cout<<"msg:CloseAmount 平仓金额:"<<pInvestorPosition->CloseAmount<<endl;
+    cout<<"msg:PositionCost 持仓成本:"<<pInvestorPosition->PositionCost<<endl;
+    cout<<"msg:PreMargin 上次占用的保证金:"<<pInvestorPosition->PreMargin<<endl;
+    cout<<"msg:UseMargin 占用的保证金:"<<pInvestorPosition->UseMargin<<endl;
+    cout<<"msg:FrozenMargin 冻结的保证金:"<<pInvestorPosition->FrozenMargin<<endl;
+    cout<<"msg:FrozenCash 冻结的资金:"<<pInvestorPosition->FrozenCash<<endl;
+    cout<<"msg:FrozenCommission 冻结的手续费:"<<pInvestorPosition->FrozenCommission<<endl;
+    cout<<"msg:CashIn 资金差额:"<<pInvestorPosition->CashIn<<endl;
+    cout<<"msg:Commission 手续费:"<<pInvestorPosition->Commission<<endl;
+    cout<<"msg:CloseProfit 平仓盈亏:"<<pInvestorPosition->CloseProfit<<endl;
+    cout<<"msg:PositionProfit 持仓盈亏:"<<pInvestorPosition->PositionProfit<<endl;
+    cout<<"msg:PreSettlementPrice 上次结算价:"<<pInvestorPosition->PreSettlementPrice<<endl;
+    cout<<"msg:SettlementPrice 本次结算价:"<<pInvestorPosition->SettlementPrice<<endl;
+    cout<<"msg:TradingDay 交易日:"<<pInvestorPosition->TradingDay<<endl;
+    cout<<"msg:SettlementID 结算编号:"<<pInvestorPosition->SettlementID<<endl;
+    cout<<"msg:OpenCost 开仓成本:"<<pInvestorPosition->OpenCost<<endl;
+    cout<<"msg:ExchangeMargin 交易所保证金:"<<pInvestorPosition->ExchangeMargin<<endl;
+    cout<<"msg:CombPosition 组合成交形成的持仓:"<<pInvestorPosition->CombPosition<<endl;
+    cout<<"msg:CombLongFrozen 组合多头冻结:"<<pInvestorPosition->CombLongFrozen<<endl;
+    cout<<"msg:CombShortFrozen 组合空头冻结:"<<pInvestorPosition->CombShortFrozen<<endl;
+    cout<<"msg:CloseProfitByDate 逐日盯市平仓盈亏:"<<pInvestorPosition->CloseProfitByDate<<endl;
+    cout<<"msg:CloseProfitByTrade 逐笔对冲平仓盈亏:"<<pInvestorPosition->CloseProfitByTrade<<endl;
+    cout<<"msg:TodayPosition 今日持仓:"<<pInvestorPosition->TodayPosition<<endl;
+    cout<<"msg:MarginRateByMoney 保证金率:"<<pInvestorPosition->MarginRateByMoney<<endl;
+    cout<<"msg:MarginRateByVolume 保证金率(按手数):"<<pInvestorPosition->MarginRateByVolume<<endl;
+    cout<<"msg:StrikeFrozen 执行冻结:"<<pInvestorPosition->StrikeFrozen<<endl;
+    cout<<"msg:StrikeFrozenAmount 执行冻结金额:"<<pInvestorPosition->StrikeFrozenAmount<<endl;
+    cout<<"msg:AbandonFrozen 放弃执行冻结:"<<pInvestorPosition->AbandonFrozen<<endl;
+    cout<<"msg:ExchangeID 交易所代码:"<<pInvestorPosition->ExchangeID<<endl;
+    cout<<"msg:YdStrikeFrozen 执行冻结的昨仓:"<<pInvestorPosition->YdStrikeFrozen<<endl;
+    cout<<"msg:InvestUnitID 投资单元代码:"<<pInvestorPosition->InvestUnitID<<endl;
+    //cout<<"msg:PositionCostOffset 大商所持仓成本差值，只有大商所使用:"<<pInvestorPosition->PositionCostOffset<endl;
 
 
 }
@@ -272,7 +322,7 @@ void TraderSpi::OnRspOrderInsert(
         cout<<pRspInfo->ErrorMsg<<endl;
         return;
     }
-    cout<<"order insert"<<pInputOrder->OrderRef<<endl;
+    cout<<"order insert "<<pInputOrder->OrderRef<<endl;
 }
 void TraderSpi::help(){
     map<string , int>::iterator iter;
@@ -313,9 +363,20 @@ void TraderSpi::OnRspQryInstrument(
 {
     //cout<< pInstrument->InstrumentName<<endl;
     //cout<< pInstrument->InstrumentID<<endl;
-    this->mapInstrument[pInstrument->InstrumentID] = *pInstrument;
-    char db[24] = "ins ";
-    strcat(db,pInstrument->InstrumentID);
+    //this->mapInstrument[pInstrument->InstrumentID] = *pInstrument;
+    char db[8196] = "ins ";
+    sprintf(db,
+            "ins InstrumentID:%s,ExchangeID:%s,InstrumentName:%s,PriceTick:%lf,CreateDate:%s,OpenDate:%s,ExpireDate:%s,StartDelivDate:%s,EndDelivDate:%s,IsTrading:%d}",
+            pInstrument->InstrumentID,
+            pInstrument->ExchangeID,
+            pInstrument->InstrumentName,
+            pInstrument->PriceTick,
+            pInstrument->CreateDate,
+            pInstrument->OpenDate,
+            pInstrument->ExpireDate,
+            pInstrument->StartDelivDate,
+            pInstrument->EndDelivDate,
+            pInstrument->IsTrading);
     //cout<< "ins "<<pInstrument->InstrumentID <<endl;
     this->send(db);
     //cout<< db <<endl;
@@ -620,7 +681,10 @@ void TraderSpi::reqInvestorPosition(const char * ins){
     memset(&pQryInvestorPosition,0,sizeof(pQryInvestorPosition));
     strcpy(pQryInvestorPosition.InvestorID,this->userReq.UserID);
     strcpy(pQryInvestorPosition.BrokerID,this->userReq.BrokerID);
-    if (ins!=NULL) strcpy(pQryInvestorPosition.InstrumentID,ins);
+    if (ins!=NULL){
+        cout<<"info "<<ins<<endl;
+        strcpy(pQryInvestorPosition.InstrumentID,ins);
+    }
     while (true)
     {
         int iResult = this->trApi->ReqQryInvestorPosition(&pQryInvestorPosition,this->getRequestID());
@@ -660,23 +724,26 @@ void TraderSpi::reqInvestorPositionDetail(const char * ins){
 
 }
 
-void TraderSpi::sendOrderClose(const char * ins){
+void TraderSpi::sendOrderClose(const char * ins,const char * ExchangeID,const char * OrderRef,const char dis){
 
     //if (!this->Login)return;
-    CThostFtdcInstrumentField insinfo = this->mapInstrument[ins];
+    //CThostFtdcInstrumentField insinfo = this->mapInstrument[ins];
     cout<<"close "<<ins<<endl;
     CThostFtdcInputOrderField order;
     memset(&order,0,sizeof(order));
     strcpy(order.BrokerID,this->userReq.BrokerID);
     strcpy(order.InvestorID,this->userReq.UserID);
     strcpy(order.InstrumentID,ins);
-    //strcpy(order.OrderRef,"test1");
+    strcpy(order.OrderRef,OrderRef);
     strcpy(order.UserID,this->userReq.UserID);
-    strcpy(order.ExchangeID,insinfo.ExchangeID);
+    strcpy(order.ExchangeID,ExchangeID);
     order.ContingentCondition =THOST_FTDC_CC_Immediately;
+    order.Direction = dis;
 
+    //order.CombOffsetFlag[0] = THOST_FTDC_OF_Close;
+    //order.CombOffsetFlag[1] = THOST_FTDC_OF_ForceClose;
     order.CombOffsetFlag[0] = THOST_FTDC_OF_CloseToday;
-    order.CombOffsetFlag[1] = THOST_FTDC_OF_CloseYesterday;
+    //order.CombOffsetFlag[3] = THOST_FTDC_OF_CloseYesterday;
 
     order.CombHedgeFlag[0] = THOST_FTDC_HF_Speculation;
 
@@ -686,6 +753,9 @@ void TraderSpi::sendOrderClose(const char * ins){
     order.ForceCloseReason = THOST_FTDC_FCC_NotForceClose;
     order.IsAutoSuspend = 0;
     order.UserForceClose = 0;
+    order.OrderPriceType = THOST_FTDC_OPT_AnyPrice;
+    order.LimitPrice = 0;
+    order.TimeCondition = THOST_FTDC_TC_IOC;
 
     while (true)
     {
@@ -702,27 +772,26 @@ void TraderSpi::sendOrderClose(const char * ins){
 
 }
 
-void TraderSpi::sendOrderOpen(const char *ins, const char *dir,const double price){
-
-    //if (!this->Login)return;
-    CThostFtdcInstrumentField insinfo = this->mapInstrument[ins];
-    //cout<<insinfo.InstrumentName<<endl;
+void TraderSpi::sendOrderOpen(
+        const char *ins,
+        const char *ExchangeID,
+        const char *orderRef,
+        const char dir,
+        const double stopPrice,
+        const double price){
     cout<<"open "<<ins<<endl;
     CThostFtdcInputOrderField order;
     memset(&order,0,sizeof(order));
     strcpy(order.BrokerID,this->userReq.BrokerID);
     strcpy(order.InvestorID,this->userReq.UserID);
     strcpy(order.InstrumentID,ins);
-    //strcpy(order.OrderRef,"test1");
+    //strcpy(order.OrderRef,orderRef);
     strcpy(order.UserID,this->userReq.UserID);
-    strcpy(order.ExchangeID,insinfo.ExchangeID);
+    strcpy(order.ExchangeID,ExchangeID);
     order.ContingentCondition =THOST_FTDC_CC_Immediately;
-    //order.StopPrice=
-    if (dir=="buy"){
-        order.Direction = THOST_FTDC_D_Buy;
-    }else{
-        order.Direction = THOST_FTDC_D_Sell;
-    }
+    //order.ContingentCondition = THOST_FTDC_CC_Touch;
+    order.StopPrice=stopPrice;
+    order.Direction = dir;
     order.CombOffsetFlag[0] = THOST_FTDC_OF_Open;
 
     order.CombHedgeFlag[0] = THOST_FTDC_HF_Speculation;
@@ -756,6 +825,56 @@ void TraderSpi::sendOrderOpen(const char *ins, const char *dir,const double pric
         }
     }
 }
+
+void TraderSpi::sendOrderInsert(
+        const char *ins,
+        const char *ExchangeID,
+        const char fsetFlag,
+        const char dis,
+        const double price){
+    CThostFtdcInputOrderField order;
+    memset(&order,0,sizeof(order));
+    strcpy(order.BrokerID,this->userReq.BrokerID);
+    strcpy(order.InvestorID,this->userReq.UserID);
+    strcpy(order.InstrumentID,ins);
+    strcpy(order.UserID,this->userReq.UserID);
+    strcpy(order.ExchangeID,ExchangeID);
+    order.ContingentCondition =THOST_FTDC_CC_Immediately;
+    order.Direction = dis;
+    order.CombOffsetFlag[0] = fsetFlag;
+    order.CombHedgeFlag[0] = THOST_FTDC_HF_Speculation;
+
+    order.VolumeTotalOriginal = 1;
+    order.VolumeCondition = THOST_FTDC_VC_AV;
+    order.MinVolume = 1;
+    order.ForceCloseReason = THOST_FTDC_FCC_NotForceClose;
+    order.IsAutoSuspend = 0;
+    order.UserForceClose = 0;
+    //cout<<"price: "<<price<<endl;
+    if (price==0){
+        order.OrderPriceType = THOST_FTDC_OPT_AnyPrice;
+        order.LimitPrice = 0;
+        order.TimeCondition = THOST_FTDC_TC_IOC;
+    }else{
+        order.OrderPriceType = THOST_FTDC_OPT_LimitPrice;
+        order.LimitPrice = price;
+        order.TimeCondition = THOST_FTDC_TC_GFD;
+    }
+    while (true)
+    {
+        int iResult = this->trApi->ReqOrderInsert(&order,this->getRequestID());
+        if (!IsFlowControl(iResult))
+        {
+            break;
+        }
+        else
+        {
+            sleep(1);
+        }
+    }
+
+}
+
 void TraderSpi::reqUserLogin(){
     //if (NULL!=this->TradingDay)return;
     while (true)
@@ -779,15 +898,14 @@ void TraderSpi::OnRtnTrade(CThostFtdcTradeField *pTrade) {
     cout<<"date "<< pTrade->TradeDate<<pTrade->TradeTime << endl;
     cout<<"Price "<< pTrade->Price << endl;
     cout<<"OrderRef "<< pTrade->OrderRef << endl;
-    this->reqInvestorPosition(pTrade->InstrumentID);
+    //this->reqInvestorPosition(pTrade->InstrumentID);
 }
 void TraderSpi::OnRtnOrder(CThostFtdcOrderField *pOrder){
 
-    //cout<<"order Ins "<< pOrder->InstrumentID << endl;
-    //cout<<"order status "<< pOrder->OrderStatus << endl;
-    //cout<<"order submit status "<< pOrder->OrderSubmitStatus << endl;
-    //cout<<"order price "<< pOrder->LimitPrice << endl;
-
-    //cout << "order VolumeTraded " << pOrder->VolumeTraded << endl;
-    //cout << "order VolumeTotal "<< pOrder->VolumeTotal << endl;
+    cout<<"msg:InstrumentID 合约代码:"<< pOrder->InstrumentID << endl;
+    cout<<"msg:order status "<< pOrder->OrderStatus << endl;
+    cout<<"msg:order submit status "<< pOrder->OrderSubmitStatus << endl;
+    cout<<"msg:order price "<< pOrder->LimitPrice << endl;
+    cout<<"StatusMsg:"<< pOrder->StatusMsg << endl;
+    cout<<"--------------------------" << endl;
 }

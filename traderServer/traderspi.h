@@ -77,7 +77,7 @@ private:
     int requestID;
     CThostFtdcReqUserLoginField userReq;
     map<string , int >mapstring;
-    map<string, CThostFtdcInstrumentField >mapInstrument;
+    //map<string, CThostFtdcInstrumentField >mapInstrument;
     void run();
     void initMap();
     void Join();
@@ -97,8 +97,20 @@ private:
 
     void help();
     void stop();
-    void sendOrderOpen(const char * ins, const char *dir, const double price=0);
-    void sendOrderClose(const char * ins);
+    void sendOrderOpen(
+            const char *ins,
+            const char *ExchangeID,
+            const char *orderRef,
+            const char dir,
+            const double stopPrice,
+            const double price=0);
+    void sendOrderClose(const char * ins, const char *ExchangeID, const char *OrderRef, const char dis);
+    void sendOrderInsert(
+            const char *ins,
+            const char *ExchangeID,
+            const char fsetFlag,
+            const char dis,
+            const double price=0);
     //void investorPosition(const char * ins);
     const char * path;
     bool queryIns;

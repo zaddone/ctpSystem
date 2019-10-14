@@ -136,7 +136,7 @@ func runComm(
 				break
 			}
 			line = line[:len(line)-1]
-			//log.Println(addr,"<------",string(line))
+			//log.Println(addr,"------>",string(line))
 			hand(line)
 		}
 	}(word[5])
@@ -181,6 +181,7 @@ type Config struct {
 	Port string
 	Static string
 	Templates string
+	SqlPath string
 	//RunAll bool
 
 	MdServer string
@@ -200,6 +201,9 @@ type Config struct {
 }
 
 
+func (self *Config)DefUser() *UserInfo {
+	return self.User[self.DefaultUser]
+}
 
 func (self *Config)Save(fileName string){
 	fi,err := os.OpenFile(fileName,os.O_CREATE|os.O_WRONLY,0777)
@@ -220,6 +224,7 @@ func NewConfig(fileName string)  *Config {
 		c.Port=":8080"
 		c.Static = "static"
 		c.Templates = "templates"
+		c.SqlPath = "ctp.db"
 
 		//c.RunAll = false
 		c.DefaultUser = "simnow"

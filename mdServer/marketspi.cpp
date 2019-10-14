@@ -227,7 +227,7 @@ void MarketSpi::subscribeMarketData(char * ins){
     char *ppInstrumentID[] = {ins};
     while (true)
     {
-        cout<<ins<<endl;
+        //cout<<ins<<endl;
         int iResult = this->mdApi->SubscribeMarketData(ppInstrumentID,1);
         if (!IsFlowControl(iResult))
             break;

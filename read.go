@@ -33,7 +33,9 @@ func main(){
 		if b== nil {
 			return nil
 		}
-		cache.Count = [3]float64{0,0,0}
+		for i,_ := range cache.Count{
+			cache.Count[i] = [3]float64{0,0,0}
+		}
 		err := b.ForEach(func(k,v []byte)error{
 			c := cache.NewCandle(
 				string(name),
@@ -50,8 +52,17 @@ func main(){
 		if err != nil {
 			return err
 		}
-		if cache.Count[1]+cache.Count[2]>0 {
-			fmt.Println(string(name),cache.Count,cache.Count[1]/cache.Count[2])
+		var c1,c2,sum float64
+		for i,c := range cache.Count{
+			c1+=c[1]
+			c2+=c[2]
+			sum += c[0]
+			if (c[1]+c[2]) >0 {
+				fmt.Println(i,c,c[1]/c[2])
+			}
+		}
+		if c1+c2 >0 {
+			fmt.Println(string(name),sum,c1,c2,c1/c2)
 		}
 		return nil
 	})

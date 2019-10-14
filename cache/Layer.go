@@ -2,12 +2,14 @@ package cache
 import(
 	"math"
 	"fmt"
+	"io"
 	//"github.com/zaddone/analog/fitting"
 	//"github.com/zaddone/ctpSystem/config"
 	"github.com/boltdb/bolt"
 	"encoding/binary"
 	"encoding/gob"
 	"bytes"
+	//"sync"
 )
 type Temple struct{
 	can Element
@@ -68,6 +70,44 @@ func NewLayer() (L *Layer) {
 	go L.runChan()
 	return L
 }
+func (self *Layer)checkTemStop(){
+	if math.Abs(self.direction) < math.Abs(self.par.cans[len(self.par.cans)-1].Diff()){
+		return
+	}
+	self.checkTem()
+}
+func (self *Layer)checkTem(){
+	c_ := self.getLast()
+	dis_:= c_.Val() - self.tem.can.Val()
+	//fmt.Println(dis_,c_.LastTime()-self.tem.can.LastTime())
+	//if dis != dis_ || dis != self.tem.Dis {
+	absDis := math.Abs(dis_)
+	t := self.tag-1
+	if dis_>0 == self.tem.Dis {
+	//if dis != self.tem.Dis {
+		self.tem.Stats = 2
+		Count[t][0]+=absDis
+	}else{
+		//fmt.Println(absDis)
+		self.tem.Stats = 1
+		Count[t][0]-=absDis
+	}
+	Count[t][self.tem.Stats]++
+	//fmt.Println(Count[t],c_.LastTime()-self.tem.can.LastTime())
+	self.tem.Save()
+	self.tem = nil
+}
+
+func (self *Layer) getLast() Element {
+	if self.child != nil {
+		return self.child.getLast()
+	}else{
+		return self.cans[len(self.cans)-1]
+		//self.Lock()
+		//defer self.Unlock()
+		//return self.lastEl
+	}
+}
 
 func (self *Layer) readAll(h func(Element)error)error{
 
@@ -83,9 +123,9 @@ func (self *Layer) readAll(h func(Element)error)error{
 	return nil
 
 }
-func (self *Layer) getNormalization()(X,Y []float64){
-	self.tem = &Temple{Dis:self.direction>0}
-	//return
+func (self *Layer) getNormalization(dis bool)(X,Y []float64){
+	self.tem = &Temple{Dis:dis}
+	return
 	var x,y float64
 	me := map[Element]bool{}
 	err := self.readAll(func(e Element)error{
@@ -104,7 +144,7 @@ func (self *Layer) getNormalization()(X,Y []float64){
 			self.tem.YMax = y
 		}
 		if self.tem.XMin == 0 || self.tem.XMin>x {
-			self.tem.can = e
+			//self.tem.can = e
 			self.tem.XMin = x
 		}
 		if self.tem.XMax < x {
@@ -115,6 +155,7 @@ func (self *Layer) getNormalization()(X,Y []float64){
 	if err != nil {
 		panic(err)
 	}
+
 	xLong := self.tem.XMax - self.tem.XMin
 	yLong := self.tem.YMax - self.tem.YMin
 	for i,x := range X {
@@ -124,8 +165,8 @@ func (self *Layer) getNormalization()(X,Y []float64){
 	return
 
 }
-func (self *Layer) getTemplate(){
-	self.getNormalization()
+func (self *Layer) getTemplate(dis bool){
+	self.getNormalization(dis)
 	//X,Y := self.getNormalization()
 	//self.tem.Wei = make([]float64,config.Conf.Weight+self.tag)
 	//if !fitting.GetCurveFittingWeight(X,Y,self.tem.Wei) {
@@ -133,7 +174,16 @@ func (self *Layer) getTemplate(){
 	//}
 	////fmt.Println(self.tem.Wei,len(X))
 	//self.tem = &Temple{}
+
+	self.tem.can = self.getLast()
 	self.tem.lcan = self.cans[len(self.cans)-1]
+	var stop Element
+	self.cans[0].Each(func(e Element)error{
+		stop = e
+		return io.EOF
+	})
+	NewInsOrder(self.tem.can,stop)
+
 	//self.tem.Save()
 }
 
@@ -177,20 +227,22 @@ func (self *Layer) baseAdd(e Element){
 		self.par.tag = self.tag+1
 	}
 	//fmt.Println("in----------->",len(self.cans))
-	self.par.add(NewNode(self.cans))
-	self.cans = nil
+	self.par.add(NewNode(self.cans[:le]))
+	self.cans = []Element{e}
 
 }
 func (self *Layer) Add(e Element){
 	if self.lastEl !=nil {
 		dl := e.LastTime() -  self.lastEl.LastTime()
-		if dl <0 || dl > 60 {
+		if dl <0 || dl > 10 {
 			//fmt.Println(dl)
 			self.canChan<-nil
 		}
 	}
 	self.canChan <- e
+	//self.Lock()
 	self.lastEl = e
+	//self.Unlock()
 }
 func (self *Layer) initAdd (c Element){
 
@@ -254,10 +306,13 @@ func (self *Layer) add(c Element) bool {
 	//fmt.Println(sumv,self.direction)
 	if splitID == 0 ||
 	sumv > absMaxD {
+		//if self.tem != nil {
+		//	self.checkTemStop()
+		//}
 		return false
 	}
 	//fmt.Println(maxD)
-	dir := self.direction
+	//dir := self.direction
 	self.direction = maxD
 	if self.par == nil {
 		self.par = &Layer{
@@ -267,79 +322,30 @@ func (self *Layer) add(c Element) bool {
 		self.par.tag = self.tag+1
 	}
 	self.par.add(NewNode(self.cans[:splitID+1]))
-	if self.tem != nil {
-		//dis := c.Val() >self.tem.lcan.Val()
 
-		var c_ Element
-		self.readAll(func(e Element)error{
-			c_ = e
-			return nil
-		})
-		dis_:= c_.Val() - self.tem.can.Val()
-		//fmt.Println(c_.LastTime()-self.tem.can.LastTime())
-		//if dis != dis_ || dis != self.tem.Dis {
-		absDis := math.Abs(dis_)
-		if dis_>0 != self.tem.Dis {
-		//if dis != self.tem.Dis {
-			self.tem.Stats = 2
-			Count[0]+=absDis
-		}else{
-			//fmt.Println(absDis)
-			self.tem.Stats = 1
-			Count[0]-=absDis
-		}
-		Count[self.tem.Stats]++
-		fmt.Println(Count,self.tem.Stats)
-		self.tem.Save()
-		self.tem = nil
-	}else{
 
-		if self.par.tem == nil &&
-		 math.Abs(dir) > absMaxD {
-		// math.Abs(dir) > absMaxD &&
-		//(self.par.direction>0) == (c.Diff()>0) &&
-		//(self.par.direction != 0) {
-			self.getTemplate()
 
-			var dis string
-			if self.tem.Dis {
-				dis= "sell"
-			}else{
-				dis= "buy"
-			}
-			price := self.tem.can.Val()
-			fmt.Println(price,dis)
-			//KeyChan<-&MsgKey{
-			//	Ins:c.Name(),
-			//	DB:[]byte(fmt.Sprintf(
-			//	"open %s %s %.2f",
-			//	c.Name(),
-			//	dis,
-			//	price,
-			//	)),
-			//	T:true,
-			//}
-		}
-	}
-
-	////fmt.Println(math.Abs(dir),absMaxD)
-	//if !self.par.add(NewNode(self.cans[:splitID+1])) &&
-	////(self.par.direction>0) == (self.direction>0) &&
-	////(self.direction>0) != (c.Diff()>0) &&
-	////math.Abs(dir)/absMaxD > 1.5 &&
-	//math.Abs(dir) > absMaxD &&
-	////sumv*1.5 > absMaxD &&
-	////self.par.tem == nil &&
-	////self.tag >1 &&
-	//(self.par.direction != 0) {
-	//	self.getTemplate()
-	//}
-	//fmt.Println(sumv,self.par.cans[len(self.par.cans)-1].Diff())
 	self.cans = self.cans[splitID:]
 	self.sum=0
 	for _,_c := range self.cans{
 		self.sum += math.Abs(_c.Diff())
 	}
+
+	if self.tem != nil {
+		self.checkTem()
+	}
+	self.getTemplate(self.direction>0)
+
+	//}else{
+		//if self.par != nil &&
+		//self.par.direction != 0 &&
+		//(self.par.direction>0) == !(self.direction>0){
+		////if math.Abs(dir) < absMaxD {
+			//self.getTemplate(self.direction>0)
+		////}else if math.Abs(dir) < absMaxD{
+		//	//self.getTemplate(self.direction>0)
+		//}
+	//}
 	//fmt.Println(self.sum/float64(len(self.cans)),self.par.sum/float64(len(self.par.cans)))
 	return true
 

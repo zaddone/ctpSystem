@@ -57,6 +57,13 @@ func (self *Candle) Diff() float64 {
 	//}
 }
 func (self *Candle) Val() float64 {
+	//if self.d != 0 {
+	//	if self.d>0{
+	//		return self.Ask
+	//	}else{
+	//		return self.Bid
+	//	}
+	//}
 	if self.v == 0 {
 		self.v = (self.Ask + self.Bid) /2
 	}

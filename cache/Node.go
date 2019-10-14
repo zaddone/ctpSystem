@@ -1,6 +1,6 @@
 package cache
 import(
-	"io"
+	//"io"
 )
 type Element interface{
 	Diff() float64
@@ -40,11 +40,12 @@ func NewNode(eles []Element) (n *Node) {
 }
 
 func (self *Node) Name() (n string){
-	self.Each(func(e Element)error{
-		n = e.Name()
-		return io.EOF
-	})
-	return
+	return self.Eles[0].Name()
+	//self.Each(func(e Element)error{
+	//	n = e.Name()
+	//	return io.EOF
+	//})
+	//return
 }
 
 func (self *Node) Each(fn func(Element)error)error{
