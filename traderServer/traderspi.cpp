@@ -140,19 +140,17 @@ void TraderSpi::routeHand(const char *data){
         break;
     }
     case 10:{
-        if (i<6)break;
-        double po,pr;
-        po = atof(str[5]);
-        pr = atof(str[6]);
-        cout<<po<<endl;
-        cout<<pr<<endl;
-        cout<<str[4][0]<<endl;
-        this->sendOrderOpen(str[1],str[2],str[3],str[4][0],po,pr);
+        if (i<5)break;
+        double pr,pr_;
+        //po = atof(str[4]);
+        pr = atof(str[4]);
+        pr_ = atof(str[5]);
+        this->sendOrderOpen(str[1],str[2],str[3][0],pr,pr_);
         break;
     }
     case 11:{
-        //if (i<3)break;
-        //this->sendOrderClose(str[1],str[2]);
+        if (i<4)break;
+        this->sendOrderClose(str[1],str[2],str[3][0],str[4][0]);
         break;
     }
     case 12:{
@@ -280,27 +278,13 @@ void TraderSpi::OnRspQryInvestorPositionDetail(
         cout<<pRspInfo->ErrorMsg<<endl;
         return;
     }
-    cout <<"InstrumentID "<< pInvestorPositionDetail->InstrumentID << endl;
-    cout <<"HedgeFlag " << pInvestorPositionDetail->HedgeFlag << endl;
-    cout <<"Direction " << pInvestorPositionDetail->Direction << endl;
-    cout <<"OpenDate " << pInvestorPositionDetail->OpenDate << endl;
-    cout <<"TradeID " << pInvestorPositionDetail->TradeID << endl;
-    cout <<"Volume " << pInvestorPositionDetail->Volume << endl;
-    cout <<"OpenPrice " << pInvestorPositionDetail->OpenPrice << endl;
-    cout <<"TradingDay " << pInvestorPositionDetail->TradingDay << endl;
-    cout <<"SettlementID " << pInvestorPositionDetail->SettlementID << endl;
-    cout <<"TradeType " << pInvestorPositionDetail->TradeType << endl;
-    cout <<"CombInstrumentID " << pInvestorPositionDetail->CombInstrumentID << endl;
-    cout <<"ExchangeID " << pInvestorPositionDetail->ExchangeID << endl;
-    cout <<"Margin " << pInvestorPositionDetail->Margin << endl;
-    cout <<"ExchMargin " << pInvestorPositionDetail->ExchMargin << endl;
-    cout <<"MarginRateByMoney " << pInvestorPositionDetail->MarginRateByMoney << endl;
-    cout <<"MarginRateByVolume " << pInvestorPositionDetail->MarginRateByVolume << endl;
-    cout <<"LastSettlementPrice " << pInvestorPositionDetail->LastSettlementPrice << endl;
-    cout <<"SettlementPrice " << pInvestorPositionDetail->SettlementPrice << endl;
-    cout <<"CloseVolume " << pInvestorPositionDetail->CloseVolume << endl;
-    cout <<"CloseAmount " << pInvestorPositionDetail->CloseAmount << endl;
-
+    cout << "InvestorPositionDetail "\
+         << pInvestorPositionDetail->BrokerID <<","\
+         << pInvestorPositionDetail->OpenDate <<","\
+         << pInvestorPositionDetail->TradingDay << ","\
+         << pInvestorPositionDetail->InstrumentID << ","\
+         << pInvestorPositionDetail->ExchangeID << ","\
+         << pInvestorPositionDetail->Direction << endl;
 
 }
 
@@ -724,7 +708,7 @@ void TraderSpi::reqInvestorPositionDetail(const char * ins){
 
 }
 
-void TraderSpi::sendOrderClose(const char * ins,const char * ExchangeID,const char * OrderRef,const char dis){
+void TraderSpi::sendOrderClose(const char * ins, const char * ExchangeID, const char dis, const char type){
 
     //if (!this->Login)return;
     //CThostFtdcInstrumentField insinfo = this->mapInstrument[ins];
@@ -734,17 +718,15 @@ void TraderSpi::sendOrderClose(const char * ins,const char * ExchangeID,const ch
     strcpy(order.BrokerID,this->userReq.BrokerID);
     strcpy(order.InvestorID,this->userReq.UserID);
     strcpy(order.InstrumentID,ins);
-    strcpy(order.OrderRef,OrderRef);
+    //strcpy(order.OrderRef,OrderRef);
     strcpy(order.UserID,this->userReq.UserID);
     strcpy(order.ExchangeID,ExchangeID);
     order.ContingentCondition =THOST_FTDC_CC_Immediately;
     order.Direction = dis;
 
-    //order.CombOffsetFlag[0] = THOST_FTDC_OF_Close;
-    //order.CombOffsetFlag[1] = THOST_FTDC_OF_ForceClose;
-    order.CombOffsetFlag[0] = THOST_FTDC_OF_CloseToday;
+    //order.CombOffsetFlag[0] = THOST_FTDC_OF_CloseToday;
+    order.CombOffsetFlag[0] = type;
     //order.CombOffsetFlag[3] = THOST_FTDC_OF_CloseYesterday;
-
     order.CombHedgeFlag[0] = THOST_FTDC_HF_Speculation;
 
     order.VolumeTotalOriginal = 1;
@@ -753,6 +735,7 @@ void TraderSpi::sendOrderClose(const char * ins,const char * ExchangeID,const ch
     order.ForceCloseReason = THOST_FTDC_FCC_NotForceClose;
     order.IsAutoSuspend = 0;
     order.UserForceClose = 0;
+
     order.OrderPriceType = THOST_FTDC_OPT_AnyPrice;
     order.LimitPrice = 0;
     order.TimeCondition = THOST_FTDC_TC_IOC;
@@ -775,10 +758,9 @@ void TraderSpi::sendOrderClose(const char * ins,const char * ExchangeID,const ch
 void TraderSpi::sendOrderOpen(
         const char *ins,
         const char *ExchangeID,
-        const char *orderRef,
         const char dir,
-        const double stopPrice,
-        const double price){
+        const double price,
+        const double stopPrice){
     cout<<"open "<<ins<<endl;
     CThostFtdcInputOrderField order;
     memset(&order,0,sizeof(order));
@@ -829,7 +811,7 @@ void TraderSpi::sendOrderOpen(
 void TraderSpi::sendOrderInsert(
         const char *ins,
         const char *ExchangeID,
-        const char fsetFlag,
+        const char setFlag,
         const char dis,
         const double price){
     CThostFtdcInputOrderField order;
@@ -841,7 +823,7 @@ void TraderSpi::sendOrderInsert(
     strcpy(order.ExchangeID,ExchangeID);
     order.ContingentCondition =THOST_FTDC_CC_Immediately;
     order.Direction = dis;
-    order.CombOffsetFlag[0] = fsetFlag;
+    order.CombOffsetFlag[0] = setFlag;
     order.CombHedgeFlag[0] = THOST_FTDC_HF_Speculation;
 
     order.VolumeTotalOriginal = 1;
@@ -894,18 +876,20 @@ void TraderSpi::reqUserLogin(){
 
 
 void TraderSpi::OnRtnTrade(CThostFtdcTradeField *pTrade) {
-    cout<<"InstrumentID "<<pTrade->InstrumentID<<endl;
-    cout<<"date "<< pTrade->TradeDate<<pTrade->TradeTime << endl;
-    cout<<"Price "<< pTrade->Price << endl;
-    cout<<"OrderRef "<< pTrade->OrderRef << endl;
+    cout<<"trade "\
+       << pTrade->InstrumentID << " " \
+       << pTrade->OrderRef << " " \
+       << pTrade->Price << " " \
+       << pTrade->TradeType << " " \
+       << endl;
     //this->reqInvestorPosition(pTrade->InstrumentID);
 }
 void TraderSpi::OnRtnOrder(CThostFtdcOrderField *pOrder){
 
     cout<<"msg:InstrumentID 合约代码:"<< pOrder->InstrumentID << endl;
-    cout<<"msg:order status "<< pOrder->OrderStatus << endl;
-    cout<<"msg:order submit status "<< pOrder->OrderSubmitStatus << endl;
+    //cout<<"msg:order status "<< pOrder->OrderStatus << endl;
+    //cout<<"msg:order submit status "<< pOrder->OrderSubmitStatus << endl;
     cout<<"msg:order price "<< pOrder->LimitPrice << endl;
     cout<<"StatusMsg:"<< pOrder->StatusMsg << endl;
-    cout<<"--------------------------" << endl;
+    cout<<"Order--------------------------" << endl;
 }

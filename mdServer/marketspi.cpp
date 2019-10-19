@@ -211,12 +211,14 @@ void MarketSpi::OnRspUserLogin(
 void MarketSpi::OnRtnDepthMarketData(CThostFtdcDepthMarketDataField *pDepthMarketData){
 
     char str[8192];
-    sprintf(str,"market %s,%sT%s,%lf,%lf",
+    sprintf(str,"market %s,%sT%s,%lf,%lf,%lf,%lf",
            pDepthMarketData->InstrumentID,
            pDepthMarketData->TradingDay,
            pDepthMarketData->UpdateTime,
            pDepthMarketData->AskPrice1,
-           pDepthMarketData->BidPrice1
+           pDepthMarketData->BidPrice1,
+           pDepthMarketData->UpperLimitPrice,
+           pDepthMarketData->LowerLimitPrice
     );
     this->send(str);
 

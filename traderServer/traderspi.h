@@ -100,11 +100,15 @@ private:
     void sendOrderOpen(
             const char *ins,
             const char *ExchangeID,
-            const char *orderRef,
             const char dir,
-            const double stopPrice,
-            const double price=0);
-    void sendOrderClose(const char * ins, const char *ExchangeID, const char *OrderRef, const char dis);
+            const double price,
+            const double stopPrice);
+    void sendOrderClose(
+            const char * ins,
+            const char *ExchangeID,
+            const char dis,
+            const char type
+            );
     void sendOrderInsert(
             const char *ins,
             const char *ExchangeID,

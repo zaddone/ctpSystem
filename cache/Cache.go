@@ -14,10 +14,14 @@ var (
 type InsOrder struct {
 	Dis bool
 	Open *Candle
+	OpenPrice string
+	Stop *Candle
 	Close *Candle
 	Orderdef string
+	Closedef string
 	Status bool
 }
+
 func (self *InsOrder)OpenOrder(){
 	ins := self.Open.Name()
 	ex,ok := InsInfoMap.Load(ins)
@@ -25,63 +29,73 @@ func (self *InsOrder)OpenOrder(){
 		panic(fmt.Errorf("%s is nil",ins))
 	}
 	var dis string
-	var stop,price float64
-	func() {
-		if self.Dis {
-			dis = "0"
-			stop = self.Close.Bid
-			price = self.Open.Ask
-		}else{
-			dis = "1"
-			stop = self.Close.Ask
-			price = self.Open.Bid
-		}
-	}()
+	var price float64
+	if self.Dis {
+		dis = "0"
+		//stop = self.Stop.Bid
+		price = self.Open.Ask
+	}else{
+		dis = "1"
+		//stop = self.Stop.Ask
+		price = self.Open.Bid
+	}
 	config.Conf.DefUser().SendTr([]byte(
-		fmt.Sprintf("open %s %s %s %s %.2f %.2f",
+		fmt.Sprintf("open %s %s %s %.5f 0",
 		ins,
 		ex.(map[string]string)["ExchangeID"],
-		self.Orderdef,
 		dis,
-		stop,
 		price,
+		//stop,
 	)))
 }
-func UpdateOrder(_c interface{}){
-	c:= _c.(*Candle)
-	or_,ok := InsOrderMap.Load(c.Name())
+
+func (self *InsOrder)CloseOrder(c interface{}){
+	self.Close = c.(*Candle)
+	ins := self.Open.Name()
+	ex,ok := InsInfoMap.Load(ins)
 	if !ok {
-		return
+		panic(fmt.Errorf("%s is nil",ins))
 	}
-	or :=or_.(*InsOrder)
-	if  or.Status{
-		//InsOrderMap.Delete(c.Name())
-		return
+	var dis string
+	var f float64
+	if self.Dis {
+		dis = "1"
+		f = self.Open.GetLowerLimitPrice()
+	}else{
+		dis = "0"
+		f = self.Open.GetUpperLimitPrice()
 	}
-	or.Open = c
-	or.OpenOrder()
+	config.Conf.DefUser().SendTr([]byte(
+		fmt.Sprintf("OrderInsert %s %s 3 %s %.5f",
+		ins,
+		ex.(map[string]string)["ExchangeID"],
+		dis,
+		f,
+	)))
 }
-func CloseOrder(c Element){
-	//or_,ok := InsOrderMap.Load(c.Name())
-}
-func NewInsOrder(_c,_c_ interface{}) (io *InsOrder) {
+func NewInsOrder(_c,_c_ interface{},dis bool) (or *InsOrder) {
 	c:= _c.(*Candle)
 	c_:= _c_.(*Candle)
-	dis := c.Val()>c_.Val()
-	or_,ok := InsOrderMap.Load(c.Name())
-	if ok && or_.(*InsOrder).Status {
-		return nil
-	}
-	io = &InsOrder{
+	//dis := c.Val()<c_.Val()
+	//fmt.Println(c.Ask,c_.Ask,c.Ask-c_.Ask,c.Time()-c_.Time())
+	//or_,ok := InsOrderMap.Load(c.Name())
+	//if ok {
+	//	or = or_.(*InsOrder)
+	//	//fmt.Println(or.Open.Val(),c.Val())
+	//	//if or_.(*InsOrder).Status {
+	//		return nil
+	//	//}
+	//}
+	or = &InsOrder{
 		Open:c,
-		Close:c_,
+		Stop:c_,
 		Dis:dis,
 		Orderdef:fmt.Sprintf("%d",time.Now().Unix()),
 	}
-
-	InsOrderMap.Store(c.Name(),io)
-	fmt.Println(io.Open,io.Close)
-	io.OpenOrder()
+	//InsOrderMap.Load()
+	InsOrderMap.Store(c.Name(),or)
+	//fmt.Println(io.Open,io.Stop)
+	or.OpenOrder()
 	return
 }
 //type MsgKey struct{
@@ -120,4 +134,12 @@ func (self *Cache) add(c *Candle){
 	}
 	L.(*Layer).Add(c)
 
+}
+func (self *Cache) Show(ins string) interface{} {
+
+	L,ok := self.LayerMap.Load(ins)
+	if !ok {
+		return nil
+	}
+	return L.(*Layer).lastEl
 }

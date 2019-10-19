@@ -34,6 +34,7 @@ type UserInfo struct {
 	sendTr chan []byte
 	sendMd chan []byte
 }
+
 func (self *UserInfo)RunTr(path string,local string,hand func([]byte)){
 	for{
 	self.sendTr = make(chan []byte,100)
@@ -227,9 +228,9 @@ func NewConfig(fileName string)  *Config {
 		c.SqlPath = "ctp.db"
 
 		//c.RunAll = false
-		c.DefaultUser = "simnow"
+		c.DefaultUser = "9999"
 		c.User = map[string]*UserInfo{
-			"simnow":&UserInfo{
+			"9999":&UserInfo{
 				BrokerID : "9999",
 				UserID : "150797",
 				Password : "Dimon2019",

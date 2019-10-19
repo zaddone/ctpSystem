@@ -19,6 +19,8 @@ type Candle struct{
 	Bid float64
 	v float64
 	d float64
+	upperLimitPrice float64
+	lowerLimitPrice float64
 }
 func NewCandle(ins string,date int64,db []byte) (c *Candle) {
 	c = &Candle{
@@ -30,6 +32,12 @@ func NewCandle(ins string,date int64,db []byte) (c *Candle) {
 		panic(err)
 	}
 	return c
+}
+func (self *Candle) GetUpperLimitPrice() float64 {
+	return self.upperLimitPrice
+}
+func (self *Candle) GetLowerLimitPrice() float64 {
+	return self.lowerLimitPrice
 }
 func (self *Candle) Name() string{
 	return self.ins
@@ -102,6 +110,14 @@ func (self *Candle) load(db string)(err error){
 		return err
 	}
 	self.Bid,err = strconv.ParseFloat(db_[3],64)
+	if err != nil {
+		return err
+	}
+	self.upperLimitPrice,err = strconv.ParseFloat(db_[4],64)
+	if err != nil {
+		return err
+	}
+	self.lowerLimitPrice,err = strconv.ParseFloat(db_[5],64)
 	if err != nil {
 		return err
 	}

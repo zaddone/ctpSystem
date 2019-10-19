@@ -2,7 +2,7 @@ package cache
 import(
 	"math"
 	"fmt"
-	"io"
+	//"io"
 	//"github.com/zaddone/analog/fitting"
 	//"github.com/zaddone/ctpSystem/config"
 	"github.com/boltdb/bolt"
@@ -76,14 +76,15 @@ func (self *Layer)checkTemStop(){
 	}
 	self.checkTem()
 }
-func (self *Layer)checkTem(){
+func (self *Layer)checkTem() (isok bool) {
 	c_ := self.getLast()
 	dis_:= c_.Val() - self.tem.can.Val()
-	//fmt.Println(dis_,c_.LastTime()-self.tem.can.LastTime())
 	//if dis != dis_ || dis != self.tem.Dis {
 	absDis := math.Abs(dis_)
 	t := self.tag-1
-	if dis_>0 == self.tem.Dis {
+	isok = (dis_>0) == self.tem.Dis
+	//fmt.Println(isok,dis_,c_.LastTime()-self.tem.can.LastTime())
+	if isok {
 	//if dis != self.tem.Dis {
 		self.tem.Stats = 2
 		Count[t][0]+=absDis
@@ -94,8 +95,9 @@ func (self *Layer)checkTem(){
 	}
 	Count[t][self.tem.Stats]++
 	//fmt.Println(Count[t],c_.LastTime()-self.tem.can.LastTime())
-	self.tem.Save()
+	//self.tem.Save()
 	self.tem = nil
+	return
 }
 
 func (self *Layer) getLast() Element {
@@ -103,9 +105,6 @@ func (self *Layer) getLast() Element {
 		return self.child.getLast()
 	}else{
 		return self.cans[len(self.cans)-1]
-		//self.Lock()
-		//defer self.Unlock()
-		//return self.lastEl
 	}
 }
 
@@ -177,12 +176,19 @@ func (self *Layer) getTemplate(dis bool){
 
 	self.tem.can = self.getLast()
 	self.tem.lcan = self.cans[len(self.cans)-1]
-	var stop Element
-	self.cans[0].Each(func(e Element)error{
-		stop = e
-		return io.EOF
-	})
-	NewInsOrder(self.tem.can,stop)
+
+	//var stop Element
+	//self.cans[0].Each(func(e Element)error{
+	//	stop = e
+	//	return io.EOF
+	//})
+	//dif := self.tem.can.Val() - stop.Val()
+	//if dif==0 ||
+	// (dif>0)!=(self.direction>0){
+	//	self.tem = nil
+	//	return
+	//}
+	//NewInsOrder(self.tem.can,stop)
 
 	//self.tem.Save()
 }
@@ -195,6 +201,7 @@ func (self *Layer) runChan(){
 	}
 
 }
+
 func (self *Layer) baseAdd(e Element){
 	if e== nil {
 		self.par = nil
@@ -203,7 +210,6 @@ func (self *Layer) baseAdd(e Element){
 	}
 	le := len(self.cans)
 	self.cans = append(self.cans,e)
-
 	if le == 0 {
 		return
 	}
@@ -226,15 +232,21 @@ func (self *Layer) baseAdd(e Element){
 		}
 		self.par.tag = self.tag+1
 	}
-	//fmt.Println("in----------->",len(self.cans))
-	self.par.add(NewNode(self.cans[:le]))
+	//fmt.Println("in----------->",le)
+	if le==1 {
+		self.par.add(self.cans[0])
+	}else{
+		self.par.add(NewNode(self.cans[:le]))
+	}
 	self.cans = []Element{e}
+	//e.SetDiff(0)
+	//self.cans=nil
 
 }
 func (self *Layer) Add(e Element){
 	if self.lastEl !=nil {
 		dl := e.LastTime() -  self.lastEl.LastTime()
-		if dl <0 || dl > 10 {
+		if dl <0 || dl > 100 {
 			//fmt.Println(dl)
 			self.canChan<-nil
 		}
@@ -285,6 +297,7 @@ func (self *Layer) add(c Element) bool {
 	self.cans = append(self.cans,c)
 	var absMaxD, maxD float64
 	self.sum  += math.Abs(c.Diff())
+	//sum  := math.Abs(c.Diff())
 	var splitID int
 	for i,_c := range self.cans[:le] {
 		//sum += math.Abs(_c.Diff())
@@ -303,7 +316,6 @@ func (self *Layer) add(c Element) bool {
 		}
 	}
 	sumv := self.sum/float64(len(self.cans))
-	//fmt.Println(sumv,self.direction)
 	if splitID == 0 ||
 	sumv > absMaxD {
 		//if self.tem != nil {
@@ -311,6 +323,7 @@ func (self *Layer) add(c Element) bool {
 		//}
 		return false
 	}
+	//fmt.Println(sumv,absMaxD)
 	//fmt.Println(maxD)
 	//dir := self.direction
 	self.direction = maxD
@@ -322,31 +335,26 @@ func (self *Layer) add(c Element) bool {
 		self.par.tag = self.tag+1
 	}
 	self.par.add(NewNode(self.cans[:splitID+1]))
-
-
-
 	self.cans = self.cans[splitID:]
 	self.sum=0
 	for _,_c := range self.cans{
 		self.sum += math.Abs(_c.Diff())
 	}
-
-	if self.tem != nil {
-		self.checkTem()
-	}
-	self.getTemplate(self.direction>0)
-
-	//}else{
-		//if self.par != nil &&
-		//self.par.direction != 0 &&
-		//(self.par.direction>0) == !(self.direction>0){
-		////if math.Abs(dir) < absMaxD {
-			//self.getTemplate(self.direction>0)
-		////}else if math.Abs(dir) < absMaxD{
-		//	//self.getTemplate(self.direction>0)
+	if self.tag == 1 {
+		//isU:= true
+		if self.tem != nil {
+			//isU = self.checkTem()
+			self.checkTem()
+		}
+		//if isU{
+		//if self.par.direction!=0 &&
+		//(self.par.direction>0) == (self.direction>0)&&
+		//(self.par.direction>0) != (self.direction>0){
+		//if math.Abs(dir) > absMaxD {
+			self.getTemplate(self.direction>0)
 		//}
-	//}
-	//fmt.Println(self.sum/float64(len(self.cans)),self.par.sum/float64(len(self.par.cans)))
+	}
+
 	return true
 
 }

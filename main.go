@@ -19,9 +19,7 @@ import(
 	"path/filepath"
 	//_ "github.com/zaddone/ctpSystem/route"
 )
-
 var (
-
 	traderAddr string
 	mdAddr string
 	dbName = flag.String("db","Ins.db","db name")
@@ -31,6 +29,15 @@ var (
 	//DefaultAddr = config.Conf.DefAdd
 	TraderChan  = make(chan []byte,100)
 	MarketChan  = make(chan []byte,100)
+	TraderRouterMap = map[string]func([]byte){
+		"ins":traderIns,
+		"trade":tradeBack,
+		"InvestorPositionDetail":traderPosition,
+	}
+	MarketRouterMap =map[string]func([]byte){
+		"ins":marketIns,
+		"market":marketInfo,
+	}
 )
 func Runserver(){
 	_,md := filepath.Split(config.Conf.MdServer)
@@ -48,24 +55,43 @@ func Runserver(){
 			RouterTrader)
 	}
 }
-
-
-func init(){
-	flag.Parse()
-	//_,tr := filepath.Split(config.Conf.TrServer)
-	//traderAddr = "/tmp/"+ tr
-	//_,md := filepath.Split(config.Conf.MdServer)
-	//mdAddr = "/tmp/"+ md
-	var err error
-	DB,err = bolt.Open(*dbName,0600,nil)
-	if err != nil {
-		panic(err)
-	}
+func initHttpRouter(){
 	Router := gin.Default()
 	Router.Static("/"+config.Conf.Static,"./"+config.Conf.Static)
 	Router.LoadHTMLGlob(config.Conf.Templates+"/*")
 	Router.GET("/",func(c *gin.Context){
 		c.HTML(http.StatusOK,"index.tmpl",nil)
+	})
+	Router.GET("/start",func(c *gin.Context){
+		u := config.Conf.User[c.DefaultQuery("user",config.Conf.DefaultUser)]
+		if u== nil {
+			c.JSON(http.StatusOK,gin.H{"msg":"Fount not"})
+			return
+		}
+		Start(u)
+		c.JSON(http.StatusOK,gin.H{
+			"msg":"start",
+			"user":u,
+		})
+	})
+
+	Router.GET("/show",func(c *gin.Context){
+		words := c.DefaultQuery("word","")
+		if words == "" {
+			c.JSON(http.StatusOK,gin.H{"msg":"Word is nil","word":words})
+			return
+		}
+		can_ := Cache.Show(words)
+		if can_ == nil {
+			c.JSON(http.StatusOK,gin.H{"msg":"Word is nil","word":words})
+			return
+		}
+		can := can_.(*cache.Candle)
+		c.JSON(
+			http.StatusOK,
+			gin.H{"upper":can.GetUpperLimitPrice(),
+			"lower":can.GetLowerLimitPrice(),
+		})
 	})
 	Router.GET("/wsend",func(c *gin.Context){
 		words := strings.Join(strings.Split(c.DefaultQuery("word",""),"_")," ")
@@ -113,33 +139,31 @@ func init(){
 		u.SendTr([]byte(words))
 		c.JSON(http.StatusOK,gin.H{"msg":"Success","word":words,"user":u})
 	})
-	go Router.Run(config.Conf.Port)
 	fmt.Println("start")
-	//taddr := getAddr(config.Conf.Taddr)
-	//maddr := getAddr(config.Conf.Maddr)
-	//fmt.Println(taddr,maddr)
-	//go UnixServer(*traderAddr,RouterTrader)
-	//go UnixServer(*mdAddr,RouterMarket)
-	//Def := config.Conf.User[config.Conf.DefaultUser]
-	//go cache.Send(func(k *cache.MsgKey){
-	//	//return
-	//	if k.T{
-	//		Def.SendTr(k.DB)
-	//		//UnixSend(traderAddr+config.Conf.DefaultUser,k.DB)
-	//	}else{
-	//		Def.SendMd(k.DB)
-	//		//UnixSend(mdAddr+config.Conf.DefaultUser,k.DB)
-	//	}
-	//})
-	go runRouterMarket()
-	go runRouterTrader()
+	go Router.Run(config.Conf.Port)
 }
 
-func main(){
+func init(){
+	flag.Parse()
+	var err error
+	DB,err = bolt.Open(*dbName,0600,nil)
+	if err != nil {
+		panic(err)
+	}
+	initHttpRouter()
 
+	go runRouter(MarketChan,MarketRouterMap)
+	go runRouter(TraderChan,TraderRouterMap)
+}
+func main(){
 	Runserver()
 	select{}
-
+}
+func Start(s *config.UserInfo){
+	s.SendTr([]byte("ReqQrySettlementInfo"))
+	s.SendTr([]byte("ReqSettlementInfoConfirm"))
+	s.SendTr([]byte("Instrument"))
+	s.SendTr([]byte("InvestorPositionDetail"))
 }
 
 func ConvertToString(src string, srcCode string, tagCode string) string {
@@ -154,120 +178,102 @@ func ConvertToString(src string, srcCode string, tagCode string) string {
 func RouterTrader(db []byte){
 	TraderChan<-db
 }
-func runRouterTrader(){
-	for{
-		db:=<-TraderChan
+func RouterMarket(db []byte){
+	MarketChan<-db
+}
+func traderPosition(db []byte){
+	//fmt.Println(string(db))
+	dbs := bytes.Split(db,[]byte{','})
+	u := config.Conf.User[string(dbs[0])]
+	if u== nil {
+		return
+	}
 
-		dbs := bytes.SplitN(db,[]byte{' '},2)
-		switch(string(dbs[0])){
-		case "ins":
-			err := DB.Batch(func(t *bolt.Tx)error{
-				_,err := t.CreateBucketIfNotExists([]byte(dbs[1]))
-				return err
-			})
-			if err != nil {
-				panic(err)
-			}
-			//fmt.Println(dbs)
-			insMap := make(map[string]string)
-			for _,mb := range  bytes.Split(dbs[1],[]byte{','}){
-				vs := strings.Split(string(mb),":")
-				insMap[vs[0]] = ConvertToString(vs[1],"gbk","utf-8")
-			}
-			ins := insMap["InstrumentID"]
-			//fmt.Println(insMap)
-			cache.StoreInsInfo(ins,insMap)
+	can_ := Cache.Show(string(dbs[3]))
+	if can_ == nil {
+		return
+	}
+	can := can_.(*cache.Candle)
+	t := "4"
+	if bytes.Equal(dbs[1],dbs[2]){
+		t = "3"
+	}
+	f := can.GetUpperLimitPrice()
+	d := "0"
+	if bytes.Equal(dbs[5],[]byte{'0'}) {
+		d = "1"
+		f = can.GetLowerLimitPrice()
+	}
+	send := fmt.Sprintf("OrderInsert %s %s %s %s %.2f",dbs[3],dbs[4],t,d,f)
+	fmt.Println(send)
+	u.SendTr([]byte(send))
+
+}
+func traderIns(db []byte){
+	insMap := make(map[string]string)
+	for _,mb := range  bytes.Split(db,[]byte{','}){
+		vs := strings.Split(string(mb),":")
+		insMap[vs[0]] = ConvertToString(vs[1],"gbk","utf-8")
+	}
+	ins := insMap["InstrumentID"]
+	cache.StoreInsInfo(ins,insMap)
+	for _,v := range config.Conf.User{
+		v.SendMd([]byte("ins "+ins))
+	}
+}
+
+func marketIns(db []byte){
+	err := DB.View(func(t *bolt.Tx)error{
+		return t.ForEach(
+			func(name []byte,b *bolt.Bucket)error{
+			db_ := append(append(db,' '),name...)
 			for _,v := range config.Conf.User{
-				v.SendMd([]byte("ins "+ins))
+				v.SendMd(db_)
 			}
-		default:
+			return nil
+		})
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+func marketInfo(db []byte){
+	c := &cache.Candle{}
+	err := c.Load(string(db))
+	if err == nil {
+		Cache.Add(c)
+		c.ToSave(DB)
+	}
+}
+
+func runRouter(c chan []byte,rm map[string]func([]byte)){
+	for{
+		db:=<-c
+		dbs := bytes.SplitN(db,[]byte{' '},2)
+		h := rm[string(dbs[0])]
+		if h == nil {
 			sdb := string(db)
 			if strings.HasPrefix(sdb,"msg:"){
 				fmt.Println(string(db))
 			}else{
 				fmt.Println(ConvertToString(string(db),"gbk","utf-8"))
 			}
+		}else{
+			h(dbs[1])
 		}
+	}
+}
+func tradeBack(db []byte){
+	dbs := bytes.Split(db,[]byte{' '})
+	ins := string(dbs[0])
+	or_,ok :=  cache.InsOrderMap.Load(ins)
+	if !ok {
+		fmt.Println(string(db))
+		return
+	}
+	or:=or_.(*cache.InsOrder)
+	or.Orderdef = string(dbs[1])
+	or.OpenPrice = string(dbs[2])
+	fmt.Println(string(db),or.Open.Val())
 
-	}
 }
-func RouterMarket(db []byte){
-	//fmt.Println("------>",len(MarketChan),string(db))
-	MarketChan<-db
-}
-func runRouterMarket(){
-	for{
-	db:=<-MarketChan
-	dbs := strings.Split(string(db)," ")
-	//fmt.Println("market",dbs)
-	switch(dbs[0]){
-	case "ins":
-		err := DB.View(func(t *bolt.Tx)error{
-			return t.ForEach(
-				func(name []byte,b *bolt.Bucket)error{
-				db_ := append(append(db,' '),name...)
-				for _,v := range config.Conf.User{
-					v.SendMd(db_)
-				}
-				return nil
-				//return UnixSend(path,append(append(db,' '),name...))
-			})
-		})
-		if err != nil {
-			panic(err)
-		}
-	case "market":
-		c := &cache.Candle{}
-		err := c.Load(dbs[1])
-		if err == nil {
-			Cache.Add(c)
-			c.ToSave(DB)
-			//log.Println(err)
-		}
-	default:
-		fmt.Println(ConvertToString(string(db),"gbk","utf-8"))
-	}
-	}
-}
-//func UnixSend(raddr string,db []byte) error {
-//	//fmt.Println("send",raddr)
-//	rAddr, err := net.ResolveUnixAddr("unixgram",raddr)
-//	if err != nil {
-//		return err
-//	}
-//	c,err := net.DialUnix("unixgram",nil,rAddr)
-//	if err != nil {
-//		return err
-//	}
-//	_,err = c.Write(db)
-//	c.Close()
-//	return err
-//}
-//func UnixServer(local string,hand func([]byte)){
-//	err := os.Remove(local)
-//	if err != nil {
-//		fmt.Println(err)
-//	}
-//	lAddr, err := net.ResolveUnixAddr("unixgram",local)
-//	if err != nil {
-//		fmt.Println(err)
-//		return
-//	}
-//	ln, err := net.ListenUnixgram("unixgram", lAddr )
-//	if err!= nil {
-//		fmt.Println(err)
-//		return
-//	}
-//	for{
-//		var buf [1024]byte
-//		n,_,err := ln.ReadFromUnix(buf[:])
-//		if err != nil {
-//			panic(err)
-//		}
-//
-//		go hand(buf[:n])
-//		//fmt.Println(local,ConvertToString(string(buf[:n]),"gbk","utf-8"))
-//
-//	}
-//	ln.Close()
-//}
