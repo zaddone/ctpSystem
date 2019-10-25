@@ -246,11 +246,11 @@ func NewConfig(fileName string)  *Config {
 				},
 			},
 		}
-		c.MdServer = "mdServer"
-		c.TrServer = "TraderServer"
+		c.MdServer = "mdServer/mdServer"
+		c.TrServer = "traderServer/traderServer"
 
 		c.Weight = 4
-		c.IsTrader = false
+		c.IsTrader = true
 
 
 		c.Save(fileName)
