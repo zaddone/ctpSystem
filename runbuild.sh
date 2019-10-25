@@ -1,0 +1,3 @@
+cd ./traderServer
+cmake .
+make
