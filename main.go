@@ -3,7 +3,7 @@ import(
 	"fmt"
 	//"os"
 	//"log"
-	//"net"
+	"sync"
 	"flag"
 	//"time"
 	"strings"
@@ -13,25 +13,29 @@ import(
 	"github.com/gin-gonic/gin"
 	"github.com/axgle/mahonia"
 	"net/http"
-	//"strconv"
+	"strconv"
 	//"os/exec"
 	"bytes"
 	"path/filepath"
 	//_ "github.com/zaddone/ctpSystem/route"
 )
 var (
+	InsTraderMap sync.Map
+	OrderCount [2]float64
 	traderAddr string
 	mdAddr string
 	dbName = flag.String("db","Ins.db","db name")
 	DB *bolt.DB
+	OrderRef int = 1
 	//Farmat = "20060102T15:04:05"
-	Cache = cache.NewCache()
+	//Cache = cache.NewCache()
 	//DefaultAddr = config.Conf.DefAdd
 	TraderChan  = make(chan []byte,100)
 	MarketChan  = make(chan []byte,100)
 	TraderRouterMap = map[string]func([]byte){
 		"ins":traderIns,
 		"trade":tradeBack,
+		"orderCancel":orderCancelBack,
 		"InvestorPositionDetail":traderPosition,
 	}
 	MarketRouterMap =map[string]func([]byte){
@@ -75,24 +79,24 @@ func initHttpRouter(){
 		})
 	})
 
-	Router.GET("/show",func(c *gin.Context){
-		words := c.DefaultQuery("word","")
-		if words == "" {
-			c.JSON(http.StatusOK,gin.H{"msg":"Word is nil","word":words})
-			return
-		}
-		can_ := Cache.Show(words)
-		if can_ == nil {
-			c.JSON(http.StatusOK,gin.H{"msg":"Word is nil","word":words})
-			return
-		}
-		can := can_.(*cache.Candle)
-		c.JSON(
-			http.StatusOK,
-			gin.H{"upper":can.GetUpperLimitPrice(),
-			"lower":can.GetLowerLimitPrice(),
-		})
-	})
+	//Router.GET("/show",func(c *gin.Context){
+	//	words := c.DefaultQuery("word","")
+	//	if words == "" {
+	//		c.JSON(http.StatusOK,gin.H{"msg":"Word is nil","word":words})
+	//		return
+	//	}
+	//	can_ := cache.Show(words)
+	//	if can_ == nil {
+	//		c.JSON(http.StatusOK,gin.H{"msg":"Word is nil","word":words})
+	//		return
+	//	}
+	//	can := can_.(*cache.Cache)
+	//	c.JSON(
+	//		http.StatusOK,
+	//		gin.H{"upper":can.GetUpperLimitPrice(),
+	//		"lower":can.GetLowerLimitPrice(),
+	//	})
+	//})
 	Router.GET("/wsend",func(c *gin.Context){
 		words := strings.Join(strings.Split(c.DefaultQuery("word",""),"_")," ")
 		if len(words) == 0 {
@@ -184,16 +188,19 @@ func RouterMarket(db []byte){
 func traderPosition(db []byte){
 	//fmt.Println(string(db))
 	dbs := bytes.Split(db,[]byte{','})
+	if len(dbs)<6 {
+		return
+	}
 	u := config.Conf.User[string(dbs[0])]
 	if u== nil {
 		return
 	}
 
-	can_ := Cache.Show(string(dbs[3]))
+	can_ := cache.Show(string(dbs[3]))
 	if can_ == nil {
 		return
 	}
-	can := can_.(*cache.Candle)
+	can := can_.GetLast().(*cache.Candle)
 	t := "4"
 	if bytes.Equal(dbs[1],dbs[2]){
 		t = "3"
@@ -204,7 +211,8 @@ func traderPosition(db []byte){
 		d = "1"
 		f = can.GetLowerLimitPrice()
 	}
-	send := fmt.Sprintf("OrderInsert %s %s %s %s %.2f",dbs[3],dbs[4],t,d,f)
+	send := fmt.Sprintf("OrderInsert %s %s %d %s %s %.2f",dbs[3],dbs[4],OrderRef,t,d,f)
+	OrderRef++
 	fmt.Println(send)
 	u.SendTr([]byte(send))
 
@@ -215,10 +223,9 @@ func traderIns(db []byte){
 		vs := strings.Split(string(mb),":")
 		insMap[vs[0]] = ConvertToString(vs[1],"gbk","utf-8")
 	}
-	ins := insMap["InstrumentID"]
-	cache.StoreInsInfo(ins,insMap)
+	cache.StoreCache(insMap)
 	for _,v := range config.Conf.User{
-		v.SendMd([]byte("ins "+ins))
+		v.SendMd([]byte("ins "+insMap["InstrumentID"]))
 	}
 }
 
@@ -241,8 +248,8 @@ func marketInfo(db []byte){
 	c := &cache.Candle{}
 	err := c.Load(string(db))
 	if err == nil {
-		Cache.Add(c)
-		c.ToSave(DB)
+		cache.AddCandle(c)
+		go c.ToSave(DB)
 	}
 }
 
@@ -263,17 +270,96 @@ func runRouter(c chan []byte,rm map[string]func([]byte)){
 		}
 	}
 }
-func tradeBack(db []byte){
-	dbs := bytes.Split(db,[]byte{' '})
-	ins := string(dbs[0])
-	or_,ok :=  cache.InsOrderMap.Load(ins)
-	if !ok {
-		fmt.Println(string(db))
+func orderCancelBack(db []byte){
+	dbs := strings.Split(string(db)," ")
+	ca := cache.Show(dbs[0])
+	if ca==nil {
 		return
 	}
-	or:=or_.(*cache.InsOrder)
-	or.Orderdef = string(dbs[1])
-	or.OpenPrice = string(dbs[2])
-	fmt.Println(string(db),or.Open.Val())
+	ca.Order.Update(2,false)
+}
+func tradeBack(db []byte){
+	dbs := strings.Split(string(db)," ")
+	ca := cache.Show(dbs[0])
+	if ca==nil {
+		return
+	}
+	c,err := strconv.ParseFloat(dbs[1],64)
+	if err != nil {
+		//return
+		panic(err)
+	}
+
+	if dbs[2]=="0"{
+		ca.Order.Update(2,true,c)
+		//fmt.Println(
+		//	"_open",
+		//	or.Open.Ask,
+		//	or.Open.Bid,
+		//	c,
+		//	or.Dis)
+	}else{
+		ca.Order.Update(4,c)
+	}
 
 }
+//func _tradeBack(db []byte){
+//	dbs := strings.Split(string(db)," ")
+//	fmt.Println(dbs)
+//	or_,ok :=  cache.InsOrderMap.Load(dbs[0])
+//	if !ok {
+//		//fmt.Println(string(db))
+//		return
+//	}
+//	or:=or_.(*cache.InsOrder)
+//	if dbs[2]=="0"{
+//
+//		c,err := strconv.ParseFloat(dbs[1],64)
+//		if err != nil {
+//			//return
+//			panic(err)
+//		}
+//		or.OpenPrice = c
+//		fmt.Println(
+//			"_open",
+//			or.Open.Ask,
+//			or.Open.Bid,
+//			or.Open.Val(),
+//			or.Dis)
+//			//var r map[string]*cache.InsOrder
+//			//r_,ok := InsTraderMap.Load(dbs[0])
+//			//if !ok{
+//			//	r = map[string]*cache.InsOrder{or}
+//			//}else{
+//			//	r = append(r_.([]*cache.InsOrder),or)
+//			//}
+//			//InsTraderMap.Store(dbs[0],r)
+//	}else{
+//		fmt.Println(
+//			"__close",
+//			or.OpenPrice,
+//			dbs[1],
+//			or.Dis)
+//		c,err := strconv.ParseFloat(dbs[1],64)
+//		if err != nil {
+//			return
+//			//panic(err)
+//		}
+//		o,err := strconv.ParseFloat(or.OpenPrice,64)
+//		if err != nil {
+//			return
+//			//panic(err)
+//		}
+//		if (o<c) == or.Dis{
+//			OrderCount[1]++
+//		}else{
+//			OrderCount[0]++
+//		}
+//		fmt.Println("------------------------------------")
+//		fmt.Println(OrderCount,OrderCount[0]/OrderCount[1])
+//		if or.Close != nil {
+//			fmt.Println("-------",or.Open.Val(),or.Close.Val())
+//		}
+//	}
+//
+//}

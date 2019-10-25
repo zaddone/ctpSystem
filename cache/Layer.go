@@ -4,7 +4,7 @@ import(
 	"fmt"
 	//"io"
 	//"github.com/zaddone/analog/fitting"
-	//"github.com/zaddone/ctpSystem/config"
+	"github.com/zaddone/ctpSystem/config"
 	"github.com/boltdb/bolt"
 	"encoding/binary"
 	"encoding/gob"
@@ -57,14 +57,14 @@ type Layer struct{
 	child *Layer
 	canChan chan Element
 	lastEl Element
-	//ca *Cache
+	ca *Cache
 	tem  *Temple
 	//sync.Mutex
 }
 
-func NewLayer() (L *Layer) {
+func NewLayer(ca *Cache) (L *Layer) {
 	L = &Layer{
-		//ca:ca,
+		ca:ca,
 		canChan:make(chan Element,100),
 	}
 	go L.runChan()
@@ -81,7 +81,7 @@ func (self *Layer)checkTem() (isok bool) {
 	dis_:= c_.Val() - self.tem.can.Val()
 	//if dis != dis_ || dis != self.tem.Dis {
 	absDis := math.Abs(dis_)
-	t := self.tag-1
+	t := self.tag
 	isok = (dis_>0) == self.tem.Dis
 	//fmt.Println(isok,dis_,c_.LastTime()-self.tem.can.LastTime())
 	if isok {
@@ -93,8 +93,10 @@ func (self *Layer)checkTem() (isok bool) {
 		self.tem.Stats = 1
 		Count[t][0]-=absDis
 	}
+	//CloseInsOrder(c_)
+	self.ca.Order.Update(3,c_)
 	Count[t][self.tem.Stats]++
-	//fmt.Println(Count[t],c_.LastTime()-self.tem.can.LastTime())
+	//fmt.Println(t,Count[t],c_.LastTime()-self.tem.can.LastTime())
 	//self.tem.Save()
 	self.tem = nil
 	return
@@ -188,7 +190,10 @@ func (self *Layer) getTemplate(dis bool){
 	//	self.tem = nil
 	//	return
 	//}
-	//NewInsOrder(self.tem.can,stop)
+	if config.Conf.IsTrader{
+		self.ca.Order.Update(1,self.tem.Dis,self.tem.can)
+		//OpenInsOrder(self.tem.can,self.tem.Dis)
+	}
 
 	//self.tem.Save()
 }
@@ -197,13 +202,24 @@ func (self *Layer) runChan(){
 	for{
 		//self.Lock()
 		self.baseAdd(<-self.canChan)
+		//self.add(<-self.canChan)
 		//self.Unlock()
 	}
 
 }
 
-func (self *Layer) baseAdd(e Element){
+func (self *Layer) _baseAdd(e Element){
 	if e== nil {
+		self.par = nil
+		self.cans = nil
+		return
+	}
+	self.add(e)
+}
+func (self *Layer) baseAdd(e Element){
+	if e == nil {
+		//CloseInsOrder(self.getLast())
+		self.ca.Order.Update(3,self.getLast())
 		self.par = nil
 		self.cans = nil
 		return
@@ -227,7 +243,7 @@ func (self *Layer) baseAdd(e Element){
 	}
 	if self.par == nil {
 		self.par = &Layer{
-			//ca:self.ca
+			ca:self.ca,
 			child:self,
 		}
 		self.par.tag = self.tag+1
@@ -239,7 +255,7 @@ func (self *Layer) baseAdd(e Element){
 		self.par.add(NewNode(self.cans[:le]))
 	}
 	self.cans = []Element{e}
-	//e.SetDiff(0)
+	e.SetDiff(0)
 	//self.cans=nil
 
 }
@@ -323,20 +339,26 @@ func (self *Layer) add(c Element) bool {
 		//}
 		return false
 	}
+
 	//fmt.Println(sumv,absMaxD)
 	//fmt.Println(maxD)
 	//dir := self.direction
+
 	self.direction = maxD
+	//var e1 Element = nil
 	if self.par == nil {
 		self.par = &Layer{
-			//ca:self.ca
+			ca:self.ca,
 			child:self,
 		}
 		self.par.tag = self.tag+1
+	//}else{
+	//	e1 = self.par.cans[len(self.par.cans)-1]
 	}
-	self.par.add(NewNode(self.cans[:splitID+1]))
+	e := NewNode(self.cans[:splitID+1])
+	self.par.add(e)
 	self.cans = self.cans[splitID:]
-	self.sum=0
+	self.sum = 0
 	for _,_c := range self.cans{
 		self.sum += math.Abs(_c.Diff())
 	}
@@ -349,9 +371,11 @@ func (self *Layer) add(c Element) bool {
 		//if isU{
 		//if self.par.direction!=0 &&
 		//(self.par.direction>0) == (self.direction>0)&&
-		//(self.par.direction>0) != (self.direction>0){
+		//(self.par.direction>0) != (self.direction<0){
 		//if math.Abs(dir) > absMaxD {
-			self.getTemplate(self.direction>0)
+		//if (e1 != nil) &&
+		//(e.Val() > e1.Val()) == (self.direction<0){
+			self.getTemplate(self.direction<0)
 		//}
 	}
 

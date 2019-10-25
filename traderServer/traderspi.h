@@ -51,6 +51,10 @@ public:
     virtual void OnRspOrderInsert(
             CThostFtdcInputOrderField *pInputOrder,
             CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
+
+    virtual void OnRspOrderAction(
+            CThostFtdcInputOrderActionField *pInputOrderAction,
+            CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast);
     virtual void OnRtnOrder(CThostFtdcOrderField *pOrder);
     virtual void OnRtnTrade(CThostFtdcTradeField *pTrade);
     virtual void OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder, CThostFtdcRspInfoField *pRspInfo);
@@ -109,9 +113,15 @@ private:
             const char dis,
             const char type
             );
+    void sendOrderAction(
+            const char *ins,
+            const char *ExchangeID,
+            const char *OrderRef
+            );
     void sendOrderInsert(
             const char *ins,
             const char *ExchangeID,
+            const char *OrderRef,
             const char fsetFlag,
             const char dis,
             const double price=0);
@@ -121,6 +131,8 @@ private:
     //bool Login;
     //char TradingDay[8];
     const char * Addr;
+    TThostFtdcFrontIDType frontID;
+    TThostFtdcSessionIDType sessionID;
 
 };
 

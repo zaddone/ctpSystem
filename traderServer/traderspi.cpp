@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <unistd.h>
 //#include <sys/stat.h>
 #include <thread>
@@ -57,6 +57,7 @@ void TraderSpi::initMap(){
     this->mapstring["open"] = 10;
     this->mapstring["close"] = 11;
     this->mapstring["OrderInsert"] = 12;
+    this->mapstring["OrderAction"] = 13;
 }
 
 void TraderSpi::routeHand(const char *data){
@@ -154,15 +155,14 @@ void TraderSpi::routeHand(const char *data){
         break;
     }
     case 12:{
-        if (i<5)break;
-        double pr=0;
-        if (i>5){
-            pr = atof(str[5]);
-        }
-        cout<<"order insert"<<endl;
-        this->sendOrderInsert(str[1],str[2],str[3][0],str[4][0],pr);
+        if (i<6)break;
+        this->sendOrderInsert(str[1],str[2],str[3],str[4][0],str[5][0],atof(str[6]));
         //this->sendOrderClose(str[1],str[2]);
         break;
+    }
+    case 13:{
+        if (i<3)break;
+        this->sendOrderAction(str[1],str[2],str[3]);
     }
     default:{
         printf("default %s %s end",data,str[0]);
@@ -291,10 +291,10 @@ void TraderSpi::OnRspQryInvestorPositionDetail(
 void TraderSpi::OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder, CThostFtdcRspInfoField *pRspInfo) {
 
     if (pRspInfo && 0!=pRspInfo->ErrorID){
-        cout<<pRspInfo->ErrorMsg<<endl;
+        cout<<"err order insert "<<pRspInfo->ErrorMsg<<pInputOrder->CombOffsetFlag[0]<<endl;
         return;
     }
-    cout<<"order err"<<pInputOrder->OrderRef<<endl;
+    //cout<<"order err"<<pInputOrder->OrderRef<<endl;
 
 }
 void TraderSpi::OnRspOrderInsert(
@@ -302,11 +302,11 @@ void TraderSpi::OnRspOrderInsert(
         CThostFtdcRspInfoField *pRspInfo,
         int nRequestID,
         bool bIsLast){
-    if (pRspInfo && 0!=pRspInfo->ErrorID){
-        cout<<pRspInfo->ErrorMsg<<endl;
+    if (pRspInfo && (0 != pRspInfo->ErrorID)){
+        cout<<"err order "<<pRspInfo->ErrorMsg<<pInputOrder->CombOffsetFlag[0]<<endl;
         return;
     }
-    cout<<"order insert "<<pInputOrder->OrderRef<<endl;
+    //cout<<"order insert "<<pInputOrder->OrderRef<<endl;
 }
 void TraderSpi::help(){
     map<string , int>::iterator iter;
@@ -384,15 +384,7 @@ void TraderSpi::OnRspUserLogin(
     int nRequestID,
     bool bIsLast)
 {
-
     cout<<"trader"<<pRspInfo->ErrorID<<endl;
-
-    //if (pRspInfo->ErrorID != 0 ){
-    //    cout<<"trader:"<<pRspInfo->ErrorID<<endl;
-    //    cout<<pRspInfo->ErrorMsg<<endl;
-
-    //}
-    //char pass[]="abc2019";
     if (140==pRspInfo->ErrorID){
         CThostFtdcUserPasswordUpdateField res;
         memset(&res,0,sizeof(res));
@@ -415,6 +407,8 @@ void TraderSpi::OnRspUserLogin(
         this->reqUserLogin();
     }else if (0 == pRspInfo->ErrorID){
         //this->Login = true;
+        this->frontID = pRspUserLogin->FrontID;
+        this->sessionID = pRspUserLogin->SessionID;
         char trading[20]="TDay ";
         strcat(trading,this->trApi->GetTradingDay());
         this->send(trading);
@@ -443,8 +437,8 @@ void TraderSpi::run(){
     char _addr[1024];
     strcpy(_addr,Addr);
     //cout<<_addr<<endl;
-    this->trApi->SubscribePublicTopic(THOST_TERT_RESTART);				// 注册公有流
-    this->trApi->SubscribePrivateTopic(THOST_TERT_RESTART);
+    this->trApi->SubscribePublicTopic(THOST_TERT_QUICK);				// 注册公有流
+    this->trApi->SubscribePrivateTopic(THOST_TERT_QUICK);
     this->trApi->RegisterFront(_addr);
     this->trApi->Init();
     //this->Join();
@@ -811,6 +805,7 @@ void TraderSpi::sendOrderOpen(
 void TraderSpi::sendOrderInsert(
         const char *ins,
         const char *ExchangeID,
+        const char *OrderRef,
         const char setFlag,
         const char dis,
         const double price){
@@ -821,6 +816,7 @@ void TraderSpi::sendOrderInsert(
     strcpy(order.InstrumentID,ins);
     strcpy(order.UserID,this->userReq.UserID);
     strcpy(order.ExchangeID,ExchangeID);
+    strcpy(order.OrderRef,OrderRef);
     order.ContingentCondition =THOST_FTDC_CC_Immediately;
     order.Direction = dis;
     order.CombOffsetFlag[0] = setFlag;
@@ -841,10 +837,43 @@ void TraderSpi::sendOrderInsert(
         order.OrderPriceType = THOST_FTDC_OPT_LimitPrice;
         order.LimitPrice = price;
         order.TimeCondition = THOST_FTDC_TC_GFD;
+        //order.TimeCondition = THOST_FTDC_TC_IOC;
     }
     while (true)
     {
         int iResult = this->trApi->ReqOrderInsert(&order,this->getRequestID());
+        if (!IsFlowControl(iResult))
+        {
+            break;
+        }
+        else
+        {
+            sleep(1);
+        }
+    }
+
+}
+
+void TraderSpi::sendOrderAction(
+        const char *ins,
+        const char *ExchangeID,
+        const char *OrderRef
+        ){
+
+    CThostFtdcInputOrderActionField action;
+    memset(&action,0,sizeof(action));
+    strcpy(action.BrokerID,this->userReq.BrokerID);
+    strcpy(action.InvestorID,this->userReq.UserID);
+    strcpy(action.InstrumentID,ins);
+    strcpy(action.UserID,this->userReq.UserID);
+    strcpy(action.ExchangeID,ExchangeID);
+    strcpy(action.OrderRef,OrderRef);
+    action.ActionFlag  = THOST_FTDC_AF_Delete;
+    action.FrontID = this->frontID;
+    action.SessionID = this->sessionID;
+    while (true)
+    {
+        int iResult = this->trApi->ReqOrderAction(&action,this->getRequestID());
         if (!IsFlowControl(iResult))
         {
             break;
@@ -878,18 +907,41 @@ void TraderSpi::reqUserLogin(){
 void TraderSpi::OnRtnTrade(CThostFtdcTradeField *pTrade) {
     cout<<"trade "\
        << pTrade->InstrumentID << " " \
-       << pTrade->OrderRef << " " \
        << pTrade->Price << " " \
-       << pTrade->TradeType << " " \
+       << pTrade->OffsetFlag << " " \
+       << pTrade->TradeDate << "T" \
+       << pTrade->TradeTime << " " \
+       << pTrade->OrderRef << " " \
        << endl;
     //this->reqInvestorPosition(pTrade->InstrumentID);
 }
 void TraderSpi::OnRtnOrder(CThostFtdcOrderField *pOrder){
 
-    cout<<"msg:InstrumentID 合约代码:"<< pOrder->InstrumentID << endl;
+    if (pOrder->CombOffsetFlag[0] == THOST_FTDC_OF_Open)
+    if (pOrder->OrderStatus == '3' || pOrder->OrderStatus=='4'){
+        this->sendOrderAction(pOrder->InstrumentID,pOrder->ExchangeID,pOrder->OrderRef);
+        return;
+    }else if (pOrder->OrderStatus=='5'){
+        cout<<"orderCancel "<<pOrder->InstrumentID<<" "<<pOrder->OrderRef<<endl;
+    }
+    //cout<<"msg:InstrumentID 合约代码:"<< pOrder->InstrumentID << endl;
+    //cout<<"msg:order OrderRef "<< pOrder->OrderRef << endl;
     //cout<<"msg:order status "<< pOrder->OrderStatus << endl;
     //cout<<"msg:order submit status "<< pOrder->OrderSubmitStatus << endl;
-    cout<<"msg:order price "<< pOrder->LimitPrice << endl;
-    cout<<"StatusMsg:"<< pOrder->StatusMsg << endl;
-    cout<<"Order--------------------------" << endl;
+    //cout<<"msg:order price "<< pOrder->UpdateTime << endl;
+    //cout<<"msg:order price "<< pOrder->LimitPrice << endl;
+    //cout<<"StatusMsg:"<< pOrder->StatusMsg << endl;
+    //cout<<"Order--------------------------" << endl;
+}
+
+void TraderSpi::OnRspOrderAction(
+        CThostFtdcInputOrderActionField *pInputOrderAction,
+        CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast){
+
+    if (pRspInfo && pRspInfo->ErrorID!=0){
+        cout<<pRspInfo->ErrorMsg<<endl;
+        return;
+    }
+    //if (!bIsLast)return;
+
 }

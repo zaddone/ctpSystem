@@ -182,25 +182,21 @@ type Config struct {
 	Port string
 	Static string
 	Templates string
-	SqlPath string
+	DbPath string
 	//RunAll bool
-
 	MdServer string
 	TrServer string
-
-
+	IsTrader bool
 	Weight int
-
-	//BrokerID string
-	//UserID string
-	//Password string
-	//PasswordBak string
-	//Taddr []string
-	//Maddr []string
-	//DefAdd int
-
 }
 
+func (self *Config) GetDbPath() string{
+	_,err := os.Stat(self.DbPath)
+	if err != nil {
+		os.MkdirAll(self.DbPath,0777)
+	}
+	return self.DbPath
+}
 
 func (self *Config)DefUser() *UserInfo {
 	return self.User[self.DefaultUser]
@@ -225,7 +221,7 @@ func NewConfig(fileName string)  *Config {
 		c.Port=":8080"
 		c.Static = "static"
 		c.Templates = "templates"
-		c.SqlPath = "ctp.db"
+		c.DbPath = "ctpdb"
 
 		//c.RunAll = false
 		c.DefaultUser = "9999"
@@ -254,6 +250,7 @@ func NewConfig(fileName string)  *Config {
 		c.TrServer = "TraderServer"
 
 		c.Weight = 4
+		c.IsTrader = false
 
 
 		c.Save(fileName)
@@ -264,3 +261,4 @@ func NewConfig(fileName string)  *Config {
 	}
 	return &c
 }
+

@@ -53,18 +53,18 @@ func main(){
 			return err
 		}
 		var c0,c1,c2 float64
-		for i,c := range cache.Count{
+		for _,c := range cache.Count{
 			c0+=c[0]
 			c1+=c[1]
 			c2+=c[2]
 			//sum += c[0]
-			if (c[1]+c[2]) >0 {
-				fmt.Println(string(name),i,c,c[1]/c[2])
-			}
+			//if (c[1]+c[2]) >0 {
+			//	fmt.Println(string(name),i,c,c[1]/c[2])
+			//}
 		}
-		//if c1+c2 >0 {
-		//	fmt.Println(string(name),sum,c0,c1,c2,c1/c2,(c1+c2)/c0)
-		//}
+		if c1+c2 >0 {
+			fmt.Println(string(name),c0,c1,c2,c1/c2)
+		}
 		return nil
 	})
 	if err != nil {
