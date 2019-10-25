@@ -1,0 +1,3 @@
+cd ./mdServer
+cmake .
+make
