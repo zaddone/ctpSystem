@@ -3,8 +3,8 @@ Port = ":8080"
 Static = "static"
 Templates = "templates"
 SqlPath = "ctpdb"
-MdServer = "mdServer/build_default/mdServer"
-TrServer = "traderServer/build_default/traderServer"
+MdServer = "mdServer/mdServer"
+TrServer = "traderServer/traderServer"
 Weight = 4
 IsTrader = true
 
