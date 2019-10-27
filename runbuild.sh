@@ -6,4 +6,4 @@ cmake .
 make
 cd ../
 go build main.go
-./main
+nohup ./main &

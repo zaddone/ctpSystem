@@ -200,7 +200,11 @@ func traderPosition(db []byte){
 	if can_ == nil {
 		return
 	}
-	can := can_.GetLast().(*cache.Candle)
+	c_ := can_.GetLast()
+	if c_== nil {
+		return
+	}
+	can := c_.(*cache.Candle)
 	t := "4"
 	if bytes.Equal(dbs[1],dbs[2]){
 		t = "3"
@@ -221,7 +225,8 @@ func traderIns(db []byte){
 	insMap := make(map[string]string)
 	for _,mb := range  bytes.Split(db,[]byte{','}){
 		vs := strings.Split(string(mb),":")
-		insMap[vs[0]] = ConvertToString(vs[1],"gbk","utf-8")
+		//insMap[vs[0]] = ConvertToString(vs[1],"gbk","utf-8")
+		insMap[vs[0]] = vs[1]
 	}
 	cache.StoreCache(insMap)
 	for _,v := range config.Conf.User{
@@ -259,12 +264,14 @@ func runRouter(c chan []byte,rm map[string]func([]byte)){
 		dbs := bytes.SplitN(db,[]byte{' '},2)
 		h := rm[string(dbs[0])]
 		if h == nil {
-			sdb := string(db)
-			if strings.HasPrefix(sdb,"msg:"){
-				fmt.Println(string(db))
-			}else{
-				fmt.Println(ConvertToString(string(db),"gbk","utf-8"))
-			}
+			fmt.Println(string(db))
+
+			//sdb := string(db)
+			//if strings.HasPrefix(sdb,"msg:"){
+			//	fmt.Println(string(db))
+			//}else{
+			//	fmt.Println(ConvertToString(string(db),"gbk","utf-8"))
+			//}
 		}else{
 			h(dbs[1])
 		}

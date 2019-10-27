@@ -106,7 +106,7 @@ func (self *Layer) getLast() Element {
 	if self.child != nil {
 		return self.child.getLast()
 	}else{
-		return self.cans[len(self.cans)-1]
+		return self.lastEl
 	}
 }
 
@@ -263,7 +263,7 @@ func (self *Layer) Add(e Element){
 	if self.lastEl !=nil {
 		dl := e.LastTime() -  self.lastEl.LastTime()
 		if dl <0 || dl > 100 {
-			//fmt.Println(dl)
+			fmt.Println("timeOut",dl,self.lastEl.Val(),e.Val())
 			self.canChan<-nil
 		}
 	}
@@ -362,7 +362,7 @@ func (self *Layer) add(c Element) bool {
 	for _,_c := range self.cans{
 		self.sum += math.Abs(_c.Diff())
 	}
-	if self.tag == 1 {
+	//if self.tag == 1 {
 		//isU:= true
 		if self.tem != nil {
 			//isU = self.checkTem()
@@ -377,7 +377,7 @@ func (self *Layer) add(c Element) bool {
 		//(e.Val() > e1.Val()) == (self.direction<0){
 			self.getTemplate(self.direction<0)
 		//}
-	}
+	//}
 
 	return true
 

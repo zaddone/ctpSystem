@@ -57,7 +57,16 @@ func (self *Candle) Dur() int64 {
 	return 1
 }
 func (self *Candle) SetDiff(d float64) {
-	self.d = d
+	if d==0 {
+		self.d = 0
+		return
+	}
+	f := self.Ask - self.Bid
+	if f>d {
+		self.d = f
+	}else{
+		self.d = d
+	}
 }
 func (self *Candle) Diff() float64 {
 	//if self.d == 0 {

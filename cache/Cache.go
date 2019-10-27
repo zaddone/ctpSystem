@@ -4,9 +4,9 @@ import(
 	//"time"
 	"sync"
 	"github.com/zaddone/ctpSystem/config"
-	//"github.com/boltdb/bolt"
-	//"path/filepath"
-	//"os"
+	"github.com/boltdb/bolt"
+	"path/filepath"
+	"os"
 )
 var (
 	Count [5][3]float64
@@ -39,9 +39,10 @@ type InsOrder struct {
 
 }
 func (self *InsOrder)Update(state int,v ...interface{}) {
+
 	if (self.State+1) != state {
 		fmt.Println(self.InsInfo["InstrumentID"],state)
-		//self.State = 0
+		self.State = 0
 		return
 	}
 	self.State = state
@@ -141,7 +142,7 @@ type Cache struct {
 	L *Layer
 	//Info map[string]string
 	Order InsOrder
-	//DB *bolt.DB
+	DB *bolt.DB
 }
 func (self *Cache)GetLast() interface{} {
 	return self.L.getLast()
@@ -169,15 +170,15 @@ func StoreCache(info map[string]string){
 		Order:InsOrder{InsInfo:info},
 	}
 	c.L=NewLayer(c)
-	//c.DB,err =  bolt.Open(
-	//	filepath.Join(
-	//		config.Conf.GetDbPath(),
-	//		ins,
-	//	),
-	//	0600,nil)
-	//if err != nil {
-	//	panic(err)
-	//}
+	c.DB,err =  bolt.Open(
+		filepath.Join(
+			config.Conf.GetDbPath(),
+			ins,
+		),
+		0600,nil)
+	if err != nil {
+		panic(err)
+	}
 	CacheMap.Store(ins,c)
 	return
 }
