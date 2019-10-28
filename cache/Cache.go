@@ -44,9 +44,9 @@ type InsOrder struct {
 }
 func (self *InsOrder)Update(state int,v ...interface{}) {
 
-	return
+	//return
 	if (self.State+1) != state {
-		//fmt.Println(self.InsInfo["InstrumentID"],state)
+		fmt.Println(self.InsInfo["InstrumentID"],state,self.State)
 		self.State = 0
 		return
 	}
