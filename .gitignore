@@ -3,8 +3,6 @@
 main
 bin
 build*
-<<<<<<< HEAD
 *.out
-=======
 conf.log
->>>>>>> 969e63f0962b2bfb05200ada47d51699938a6d14
+ctpdb

@@ -2,11 +2,11 @@ DefaultUser = "9999"
 Port = ":8080"
 Static = "static"
 Templates = "templates"
-SqlPath = "ctpdb"
+DbPath = "ctpdb"
 MdServer = "mdServer/mdServer"
 TrServer = "traderServer/traderServer"
 Weight = 4
-IsTrader = true
+IsTrader = false
 
 [User]
   [User.9999]

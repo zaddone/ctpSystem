@@ -10,7 +10,7 @@ import(
 var (
 	dbName = flag.String("db","ins.db","db name")
 	DB *bolt.DB
-	Cache = cache.NewCache()
+	//Cache = cache.NewCache()
 )
 func init(){
 	flag.Parse()
@@ -22,21 +22,23 @@ func init(){
 }
 
 func main(){
-
 	fmt.Println("start")
 	t,err := DB.Begin(false)
 	if err != nil {
 		panic(err)
 	}
 	err = t.ForEach(func(name []byte,b *bolt.Bucket)error{
-
 		if b== nil {
 			return nil
 		}
 		for i,_ := range cache.Count{
 			cache.Count[i] = [3]float64{0,0,0}
 		}
+		cache.StoreCache(map[string]string{"InstrumentID":string(name)})
+		//fmt.Println(string(name))
 		err := b.ForEach(func(k,v []byte)error{
+
+
 			c := cache.NewCandle(
 				string(name),
 				int64(binary.BigEndian.Uint64(k)),
@@ -46,7 +48,8 @@ func main(){
 				return nil
 			}
 			//fmt.Println(c)
-			Cache.Add(c)
+			//Cache.Add(c)
+			cache.AddCandle(c)
 			return nil
 		})
 		if err != nil {

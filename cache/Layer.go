@@ -76,29 +76,32 @@ func (self *Layer)checkTemStop(){
 	}
 	self.checkTem()
 }
-func (self *Layer)checkTem() (isok bool) {
+func (self *Layer) checkTem() (isok bool) {
 	c_ := self.getLast()
-	dis_:= c_.Val() - self.tem.can.Val()
-	//if dis != dis_ || dis != self.tem.Dis {
-	absDis := math.Abs(dis_)
-	t := self.tag
-	isok = (dis_>0) == self.tem.Dis
-	//fmt.Println(isok,dis_,c_.LastTime()-self.tem.can.LastTime())
-	if isok {
-	//if dis != self.tem.Dis {
-		self.tem.Stats = 2
-		Count[t][0]+=absDis
-	}else{
-		//fmt.Println(absDis)
-		self.tem.Stats = 1
-		Count[t][0]-=absDis
+
+	if self.tag ==1 {
+		//if self.par!=nil &&
+		//self.par.tem != nil &&
+		//self.par.tem.Dis != self.tem.Dis {
+			dis_:= c_.Val() - self.tem.can.Val()
+			absDis := math.Abs(dis_)
+			isok = (dis_>0) == self.tem.Dis
+			t := self.tag-1
+			if isok {
+				self.tem.Stats = 2
+				Count[t][0] += absDis
+			}else{
+				self.tem.Stats = 1
+				Count[t][0] -= absDis
+			}
+			Count[t][self.tem.Stats]++
+			//fmt.Println(Count[t],c_.Time() - self.tem.can.Time())
+		//}
 	}
-	//CloseInsOrder(c_)
-	self.ca.Order.Update(3,c_)
-	Count[t][self.tem.Stats]++
-	//fmt.Println(t,Count[t],c_.LastTime()-self.tem.can.LastTime())
-	//self.tem.Save()
+
+
 	self.tem = nil
+	self.ca.Order.Update(3,c_)
 	return
 }
 
@@ -263,7 +266,7 @@ func (self *Layer) Add(e Element){
 	if self.lastEl !=nil {
 		dl := e.LastTime() -  self.lastEl.LastTime()
 		if dl <0 || dl > 100 {
-			fmt.Println("timeOut",dl,self.lastEl.Val(),e.Val())
+			//fmt.Println("timeOut",dl,self.lastEl.Val(),e.Val())
 			self.canChan<-nil
 		}
 	}

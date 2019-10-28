@@ -6,7 +6,7 @@ import(
 	"github.com/zaddone/ctpSystem/config"
 	"github.com/boltdb/bolt"
 	"path/filepath"
-	"os"
+	//"os"
 )
 var (
 	Count [5][3]float64
@@ -21,9 +21,13 @@ func AddCandle(c *Candle) {
 	if !ok {
 		panic(c.Name())
 	}
-	c_.(*Cache).L.Add(c)
+
+	ca := c_.(*Cache)
+	go c.ToSave(ca.DB)
+	ca.L.Add(c)
 }
 type InsOrder struct {
+
 	InsInfo map[string]string
 
 	Dis bool
@@ -40,8 +44,9 @@ type InsOrder struct {
 }
 func (self *InsOrder)Update(state int,v ...interface{}) {
 
+	return
 	if (self.State+1) != state {
-		fmt.Println(self.InsInfo["InstrumentID"],state)
+		//fmt.Println(self.InsInfo["InstrumentID"],state)
 		self.State = 0
 		return
 	}
@@ -170,11 +175,14 @@ func StoreCache(info map[string]string){
 		Order:InsOrder{InsInfo:info},
 	}
 	c.L=NewLayer(c)
-	c.DB,err =  bolt.Open(
-		filepath.Join(
+	p := filepath.Join(
 			config.Conf.GetDbPath(),
 			ins,
-		),
+		)
+	//fmt.Println(p)
+	var err error
+	c.DB,err =  bolt.Open(
+		p,
 		0600,nil)
 	if err != nil {
 		panic(err)
@@ -182,32 +190,3 @@ func StoreCache(info map[string]string){
 	CacheMap.Store(ins,c)
 	return
 }
-//type Cache struct {
-//	LayerMap sync.Map
-//	//BaseLayer map[string]*Layer
-//	//candleChan chan *Candle
-//}
-//func NewCache() *Cache {
-//	return &Cache{}
-//}
-//func (self *Cache) Add(c *Candle){
-//	self.add(c)
-//}
-//func (self *Cache) add(c *Candle){
-//
-//	L,ok := self.LayerMap.Load(c.ins)
-//	if !ok{
-//		L = NewLayer(self)
-//		self.LayerMap.Store(c.ins,L)
-//	}
-//	L.(*Layer).Add(c)
-//
-//}
-//func (self *Cache) Show(ins string) interface{} {
-//
-//	L,ok := self.LayerMap.Load(ins)
-//	if !ok {
-//		return nil
-//	}
-//	return L.(*Layer).lastEl
-//}

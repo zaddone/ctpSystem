@@ -1,13 +1,13 @@
 package main
 import(
 	"fmt"
-	//"os"
+	"os"
 	//"log"
 	"sync"
 	"flag"
 	//"time"
 	"strings"
-	"github.com/boltdb/bolt"
+	//"github.com/boltdb/bolt"
 	"github.com/zaddone/ctpSystem/cache"
 	"github.com/zaddone/ctpSystem/config"
 	"github.com/gin-gonic/gin"
@@ -25,7 +25,7 @@ var (
 	traderAddr string
 	mdAddr string
 	dbName = flag.String("db","Ins.db","db name")
-	DB *bolt.DB
+	//DB *bolt.DB
 	OrderRef int = 1
 	//Farmat = "20060102T15:04:05"
 	//Cache = cache.NewCache()
@@ -149,11 +149,11 @@ func initHttpRouter(){
 
 func init(){
 	flag.Parse()
-	var err error
-	DB,err = bolt.Open(*dbName,0600,nil)
-	if err != nil {
-		panic(err)
-	}
+	//var err error
+	//DB,err = bolt.Open(*dbName,0600,nil)
+	//if err != nil {
+	//	panic(err)
+	//}
 	initHttpRouter()
 
 	go runRouter(MarketChan,MarketRouterMap)
@@ -235,26 +235,32 @@ func traderIns(db []byte){
 }
 
 func marketIns(db []byte){
-	err := DB.View(func(t *bolt.Tx)error{
-		return t.ForEach(
-			func(name []byte,b *bolt.Bucket)error{
-			db_ := append(append(db,' '),name...)
+
+	err := filepath.Walk(
+		config.Conf.GetDbPath(),
+		func(path string,
+		f os.FileInfo,
+		err error)error{
+			if f.IsDir() {
+				return nil
+			}
+			db_ := []byte(string(db)+" "+f.Name())
 			for _,v := range config.Conf.User{
 				v.SendMd(db_)
 			}
 			return nil
-		})
 	})
 	if err != nil {
 		panic(err)
 	}
+
 }
 func marketInfo(db []byte){
 	c := &cache.Candle{}
 	err := c.Load(string(db))
 	if err == nil {
 		cache.AddCandle(c)
-		go c.ToSave(DB)
+		//go c.ToSave(DB)
 	}
 }
 

@@ -190,7 +190,7 @@ type Config struct {
 	Weight int
 }
 
-func (self *Config) GetDbPath() string{
+func (self *Config) GetDbPath() string {
 	_,err := os.Stat(self.DbPath)
 	if err != nil {
 		os.MkdirAll(self.DbPath,0777)
