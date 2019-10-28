@@ -23,7 +23,7 @@ func AddCandle(c *Candle) {
 	}
 
 	ca := c_.(*Cache)
-	go c.ToSave(ca.DB)
+	//go c.ToSave(ca.DB)
 	ca.L.Add(c)
 }
 type InsOrder struct {

@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <unistd.h>
 //#include <sys/stat.h>
 #include <thread>
@@ -23,9 +23,9 @@ TraderSpi::TraderSpi(const char * path):socketUnixServer(path){
 TraderSpi::TraderSpi(
         const char * brokerID,
         const char * userID,
-        const char *password,
-        const char *passwordBak,
-        const char *addr,
+        const char * password,
+        const char * passwordBak,
+        const char * addr,
         const char * path):socketUnixServer(path){
 
     //this->Login = false;

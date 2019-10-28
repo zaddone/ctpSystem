@@ -224,11 +224,30 @@ func NewConfig(fileName string)  *Config {
 		c.DbPath = "ctpdb"
 
 		//c.RunAll = false
-		c.DefaultUser = "9999"
+		c.DefaultUser = "150797"
 		c.User = map[string]*UserInfo{
-			"9999":&UserInfo{
+			"150797":&UserInfo{
 				BrokerID : "9999",
 				UserID : "150797",
+				Password : "Dimon2019",
+				PasswordBak : "abc2019",
+				DefAdd : 2,
+				Taddr : []string{
+					"tcp://180.168.146.187:10100",
+					"tcp://180.168.146.187:10101",
+					"tcp://218.202.237.33:10102",
+					"tcp://180.168.146.187:10130",
+				},
+				Maddr : []string{
+					"tcp://180.168.146.187:10110",
+					"tcp://180.168.146.187:10111",
+					"tcp://218.202.237.33:10112",
+					"tcp://180.168.146.187:10131",
+				},
+			},
+			"153985":&UserInfo{
+				BrokerID : "9999",
+				UserID : "153985",
 				Password : "Dimon2019",
 				PasswordBak : "abc2019",
 				DefAdd : 2,
