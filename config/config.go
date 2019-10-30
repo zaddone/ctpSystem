@@ -183,6 +183,7 @@ type Config struct {
 	Static string
 	Templates string
 	DbPath string
+	TPath string
 	//RunAll bool
 	MdServer string
 	TrServer string
@@ -190,6 +191,13 @@ type Config struct {
 	Weight int
 }
 
+func (self *Config) GetTPath() string {
+	_,err := os.Stat(self.TPath)
+	if err != nil {
+		os.MkdirAll(self.TPath,0777)
+	}
+	return self.TPath
+}
 func (self *Config) GetDbPath() string {
 	_,err := os.Stat(self.DbPath)
 	if err != nil {
@@ -222,13 +230,33 @@ func NewConfig(fileName string)  *Config {
 		c.Static = "static"
 		c.Templates = "templates"
 		c.DbPath = "ctpdb"
+		c.TPath = "ctpTrader"
 
 		//c.RunAll = false
-		c.DefaultUser = "9999"
+		c.DefaultUser = "150797"
 		c.User = map[string]*UserInfo{
-			"9999":&UserInfo{
+			"150797":&UserInfo{
 				BrokerID : "9999",
 				UserID : "150797",
+				Password : "Dimon2019",
+				PasswordBak : "abc2019",
+				DefAdd : 2,
+				Taddr : []string{
+					"tcp://180.168.146.187:10100",
+					"tcp://180.168.146.187:10101",
+					"tcp://218.202.237.33:10102",
+					"tcp://180.168.146.187:10130",
+				},
+				Maddr : []string{
+					"tcp://180.168.146.187:10110",
+					"tcp://180.168.146.187:10111",
+					"tcp://218.202.237.33:10112",
+					"tcp://180.168.146.187:10131",
+				},
+			},
+			"153985":&UserInfo{
+				BrokerID : "9999",
+				UserID : "153985",
 				Password : "Dimon2019",
 				PasswordBak : "abc2019",
 				DefAdd : 2,

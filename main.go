@@ -48,16 +48,26 @@ func Runserver(){
 	mdAddr = "/tmp/"+ md
 	_,tr := filepath.Split(config.Conf.TrServer)
 	traderAddr = "/tmp/"+ tr
-	for k,v := range config.Conf.User{
-		go v.RunMd(
-			config.Conf.MdServer,
-			mdAddr+"_"+k,
-			RouterMarket)
-		go v.RunTr(
-			config.Conf.TrServer,
-			traderAddr+"_"+k,
-			RouterTrader)
-	}
+	u := config.Conf.DefUser()
+	go u.RunMd(
+		config.Conf.MdServer,
+		mdAddr+"_"+config.Conf.DefaultUser,
+		RouterMarket)
+	go u.RunTr(
+		config.Conf.TrServer,
+		traderAddr+"_"+config.Conf.DefaultUser,
+		RouterTrader)
+
+	//for k,v := range config.Conf.User{
+	//	go v.RunMd(
+	//		config.Conf.MdServer,
+	//		mdAddr+"_"+k,
+	//		RouterMarket)
+	//	go v.RunTr(
+	//		config.Conf.TrServer,
+	//		traderAddr+"_"+k,
+	//		RouterTrader)
+	//}
 }
 func initHttpRouter(){
 	Router := gin.Default()
@@ -67,6 +77,8 @@ func initHttpRouter(){
 		c.HTML(http.StatusOK,"index.tmpl",nil)
 	})
 	Router.GET("/start",func(c *gin.Context){
+
+		//u := config.Conf.DefUser()
 		u := config.Conf.User[c.DefaultQuery("user",config.Conf.DefaultUser)]
 		if u== nil {
 			c.JSON(http.StatusOK,gin.H{"msg":"Fount not"})
@@ -229,13 +241,15 @@ func traderIns(db []byte){
 		insMap[vs[0]] = vs[1]
 	}
 	cache.StoreCache(insMap)
-	for _,v := range config.Conf.User{
-		v.SendMd([]byte("ins "+insMap["InstrumentID"]))
-	}
+	config.Conf.DefUser().SendMd([]byte("ins "+insMap["InstrumentID"]))
+	//for _,v := range config.Conf.User{
+	//	v.SendMd([]byte("ins "+insMap["InstrumentID"]))
+	//}
 }
 
 func marketIns(db []byte){
 
+	u := config.Conf.DefUser()
 	err := filepath.Walk(
 		config.Conf.GetDbPath(),
 		func(path string,
@@ -245,9 +259,10 @@ func marketIns(db []byte){
 				return nil
 			}
 			db_ := []byte(string(db)+" "+f.Name())
-			for _,v := range config.Conf.User{
-				v.SendMd(db_)
-			}
+			u.SendMd(db_)
+			//for _,v := range config.Conf.User{
+			//	v.SendMd(db_)
+			//}
 			return nil
 	})
 	if err != nil {

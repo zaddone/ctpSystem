@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <unistd.h>
 //#include <sys/stat.h>
 #include <thread>
@@ -23,9 +23,9 @@ TraderSpi::TraderSpi(const char * path):socketUnixServer(path){
 TraderSpi::TraderSpi(
         const char * brokerID,
         const char * userID,
-        const char *password,
-        const char *passwordBak,
-        const char *addr,
+        const char * password,
+        const char * passwordBak,
+        const char * addr,
         const char * path):socketUnixServer(path){
 
     //this->Login = false;
@@ -288,10 +288,14 @@ void TraderSpi::OnRspQryInvestorPositionDetail(
 
 }
 
-void TraderSpi::OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder, CThostFtdcRspInfoField *pRspInfo) {
+void TraderSpi::OnErrRtnOrderInsert(
+		CThostFtdcInputOrderField *pInputOrder, 
+		CThostFtdcRspInfoField *pRspInfo) {
 
     if (pRspInfo && 0!=pRspInfo->ErrorID){
-        cout<<"err order insert "<<pRspInfo->ErrorMsg<<pInputOrder->CombOffsetFlag[0]<<endl;
+
+        cout<<"orderCancel "<<pInputOrder->InstrumentID<<" "<<pInputOrder->OrderRef<<endl;
+        //cout<<"err order insert "<<pRspInfo->ErrorMsg<<pInputOrder->CombOffsetFlag[0]<<endl;
         return;
     }
     //cout<<"order err"<<pInputOrder->OrderRef<<endl;
@@ -303,6 +307,9 @@ void TraderSpi::OnRspOrderInsert(
         int nRequestID,
         bool bIsLast){
     if (pRspInfo && (0 != pRspInfo->ErrorID)){
+
+	    
+        //cout<<"orderCancel "<<pInputOrder.->InstrumentID<<" "<<pInputOrder.->OrderRef<<endl;
         cout<<"err order "<<pRspInfo->ErrorMsg<<pInputOrder->CombOffsetFlag[0]<<endl;
         return;
     }
