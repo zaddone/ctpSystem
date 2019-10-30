@@ -5,4 +5,4 @@ bin
 build*
 *.out
 conf.log
-ctpdb
+ctpdb*
