@@ -1,6 +1,7 @@
 package cache
 import(
 	"fmt"
+	//"strings"
 	//"time"
 	"sync"
 	"github.com/zaddone/ctpSystem/config"
@@ -33,6 +34,7 @@ type InsOrder struct {
 
 	Dis bool
 	Open *Candle
+	OpenP float64
 	OpenPrice float64
 	//OpenRef string
 
@@ -43,16 +45,47 @@ type InsOrder struct {
 	State int
 
 }
-//func (self *InsOrder) SaveOpen() error {
-//	self.DB.Batch(func(t *bolt.Tx)error{
-//		b,err := t.CreateBucketIfNotExists(self.InsInfo["InstrumentID"])
-//		if err != nil {
-//			return err
-//		}
-//		b.Put(fmt.Sprintf("%d",self.Open.Time()),)
-//		return nil
-//	})
-//}
+func (self *InsOrder) SaveDB(p float64) error {
+	return self.DB.Update(func(t *bolt.Tx)error{
+		b,err := t.CreateBucketIfNotExists([]byte(self.InsInfo["InstrumentID"]))
+		if err != nil {
+			return err
+		}
+		k := []byte(fmt.Sprintf("%d",self.Open.Time()))
+		v := b.Get(k)
+		if v != nil {
+			return fmt.Errorf("repeat %s",v)
+		}
+		return b.Put(k,[]byte(fmt.Sprintf("%.2f",p)))
+	})
+}
+
+func (self *InsOrder) DeleteDB() error {
+	return self.DB.Update(func(t *bolt.Tx)error{
+		b  := t.Bucket([]byte(self.InsInfo["InstrumentID"]))
+		if b == nil {
+			return fmt.Errorf("bucker is nil")
+		}
+		return b.Delete([]byte(fmt.Sprintf("%d",self.Open.Time())))
+	})
+}
+
+func (self *InsOrder) UpdateDB(p float64) error {
+	return self.DB.Update(func(t *bolt.Tx)error{
+		b  := t.Bucket([]byte(self.InsInfo["InstrumentID"]))
+		if b == nil {
+			return fmt.Errorf("bucker is nil")
+		}
+		k := []byte(fmt.Sprintf("%d",self.Open.Time()))
+		v := b.Get(k)
+		if v == nil {
+			return fmt.Errorf("%s is Not Found",k)
+		}
+		return b.Put(k,append(v,[]byte(fmt.Sprintf(" %.2f",p))...))
+
+	})
+
+}
 func (self *InsOrder)Update(state int,v ...interface{}) {
 
 	//return
@@ -65,19 +98,25 @@ func (self *InsOrder)Update(state int,v ...interface{}) {
 	switch state {
 	case 1:
 		self.OpenOrder(v[1].(*Candle),v[0].(bool))
+		self.SaveDB(self.OpenP)
 	case 2:
 		if !v[0].(bool){
+			self.DeleteDB()
 			self.State = 0
 		}else{
 			self.OpenPrice = v[1].(float64)
+			self.UpdateDB(self.OpenPrice)
 			//self.SaveOpen()
 		}
 
 	case 3:
 		self.CloseOrder(v[0].(*Candle))
+		self.UpdateDB(self.Close.Val())
 	case 4:
 		diff := self.Close.Val() - self.Open.Val()
 		self.ClosePrice = v[0].(float64)
+		self.UpdateDB(self.ClosePrice)
+
 		diff_:= self.ClosePrice - self.OpenPrice
 		ff := diff>0
 		if (diff_>0) == ff{
@@ -108,15 +147,15 @@ func (self *InsOrder)OpenOrder(open *Candle,_dir bool){
 	self.Dis = _dir
 	self.OpenPrice = 0
 	var dis string
-	var price float64
+	//var price float64
 	if self.Dis {
 		dis = "0"
 		//stop = self.Stop.Bid
-		price = self.Open.Ask
+		self.OpenP = self.Open.Ask
 	}else{
 		dis = "1"
 		//stop = self.Stop.Ask
-		price = self.Open.Bid
+		self.OpenP = self.Open.Bid
 	}
 	config.Conf.DefUser().SendTr([]byte(
 		fmt.Sprintf("OrderInsert %s %s o%d 0 %s %.5f",
@@ -124,7 +163,7 @@ func (self *InsOrder)OpenOrder(open *Candle,_dir bool){
 		self.InsInfo["ExchangeID"],
 		self.Open.Time(),
 		dis,
-		price,
+		self.OpenP,
 		//stop,
 	)))
 }
