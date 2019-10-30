@@ -8,6 +8,7 @@ TrServer = "traderServer/traderServer"
 Weight = 4
 IsTrader = true
 DefaultUser = "153985"
+Example = ["AP001","AP003","AP005","AP007","AP010","AP911","AP912"]
 
 [User]
   [User.153985]
@@ -17,7 +18,7 @@ DefaultUser = "153985"
     PasswordBak = "abc2019"
     Taddr = ["tcp://180.168.146.187:10100", "tcp://180.168.146.187:10101", "tcp://218.202.237.33:10102", "tcp://180.168.146.187:10130"]
     Maddr = ["tcp://180.168.146.187:10110", "tcp://180.168.146.187:10111", "tcp://218.202.237.33:10112", "tcp://180.168.146.187:10131"]
-    DefAdd = 2
+    DefAdd = 3
   [User.150797]
     BrokerID = "9999"
     UserID = "150797"
