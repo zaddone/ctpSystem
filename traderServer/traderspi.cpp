@@ -288,10 +288,14 @@ void TraderSpi::OnRspQryInvestorPositionDetail(
 
 }
 
-void TraderSpi::OnErrRtnOrderInsert(CThostFtdcInputOrderField *pInputOrder, CThostFtdcRspInfoField *pRspInfo) {
+void TraderSpi::OnErrRtnOrderInsert(
+		CThostFtdcInputOrderField *pInputOrder, 
+		CThostFtdcRspInfoField *pRspInfo) {
 
     if (pRspInfo && 0!=pRspInfo->ErrorID){
-        cout<<"err order insert "<<pRspInfo->ErrorMsg<<pInputOrder->CombOffsetFlag[0]<<endl;
+
+        cout<<"orderCancel "<<pInputOrder->InstrumentID<<" "<<pInputOrder->OrderRef<<endl;
+        //cout<<"err order insert "<<pRspInfo->ErrorMsg<<pInputOrder->CombOffsetFlag[0]<<endl;
         return;
     }
     //cout<<"order err"<<pInputOrder->OrderRef<<endl;
@@ -303,6 +307,9 @@ void TraderSpi::OnRspOrderInsert(
         int nRequestID,
         bool bIsLast){
     if (pRspInfo && (0 != pRspInfo->ErrorID)){
+
+	    
+        //cout<<"orderCancel "<<pInputOrder.->InstrumentID<<" "<<pInputOrder.->OrderRef<<endl;
         cout<<"err order "<<pRspInfo->ErrorMsg<<pInputOrder->CombOffsetFlag[0]<<endl;
         return;
     }

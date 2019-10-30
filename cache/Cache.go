@@ -23,12 +23,13 @@ func AddCandle(c *Candle) {
 	}
 
 	ca := c_.(*Cache)
-	//go c.ToSave(ca.DB)
+	go c.ToSave(ca.DB)
 	ca.L.Add(c)
 }
 type InsOrder struct {
 
 	InsInfo map[string]string
+	DB *bolt.DB
 
 	Dis bool
 	Open *Candle
@@ -42,11 +43,21 @@ type InsOrder struct {
 	State int
 
 }
+//func (self *InsOrder) SaveOpen() error {
+//	self.DB.Batch(func(t *bolt.Tx)error{
+//		b,err := t.CreateBucketIfNotExists(self.InsInfo["InstrumentID"])
+//		if err != nil {
+//			return err
+//		}
+//		b.Put(fmt.Sprintf("%d",self.Open.Time()),)
+//		return nil
+//	})
+//}
 func (self *InsOrder)Update(state int,v ...interface{}) {
 
 	//return
 	if (self.State+1) != state {
-		fmt.Println(self.InsInfo["InstrumentID"],state,self.State)
+		//fmt.Println(self.InsInfo["InstrumentID"],state,self.State)
 		self.State = 0
 		return
 	}
@@ -59,7 +70,9 @@ func (self *InsOrder)Update(state int,v ...interface{}) {
 			self.State = 0
 		}else{
 			self.OpenPrice = v[1].(float64)
+			//self.SaveOpen()
 		}
+
 	case 3:
 		self.CloseOrder(v[0].(*Candle))
 	case 4:
@@ -106,7 +119,7 @@ func (self *InsOrder)OpenOrder(open *Candle,_dir bool){
 		price = self.Open.Bid
 	}
 	config.Conf.DefUser().SendTr([]byte(
-		fmt.Sprintf("OrderInsert %s %s %d 0 %s %.5f",
+		fmt.Sprintf("OrderInsert %s %s o%d 0 %s %.5f",
 		self.Open.Name(),
 		self.InsInfo["ExchangeID"],
 		self.Open.Time(),
@@ -133,10 +146,11 @@ func (self *InsOrder)CloseOrder(c *Candle){
 	}
 	config.Conf.DefUser().SendTr(
 		[]byte(
-			fmt.Sprintf("OrderInsert %s %s %d 3 %s %.5f",
+			fmt.Sprintf("OrderInsert %s %s c%d 3 %s %.5f",
 			self.Open.Name(),
 			self.InsInfo["ExchangeID"],
-			self.Close.Time(),
+		//	self.Close.Time(),
+			self.Open.Time(),
 			dis,
 			f),
 		),
@@ -148,6 +162,7 @@ type Cache struct {
 	//Info map[string]string
 	Order InsOrder
 	DB *bolt.DB
+	//DBT *bolt.DB
 }
 func (self *Cache)GetLast() interface{} {
 	return self.L.getLast()
@@ -175,14 +190,23 @@ func StoreCache(info map[string]string){
 		Order:InsOrder{InsInfo:info},
 	}
 	c.L=NewLayer(c)
-	p := filepath.Join(
-			config.Conf.GetDbPath(),
-			ins,
-		)
 	//fmt.Println(p)
 	var err error
 	c.DB,err =  bolt.Open(
-		p,
+		filepath.Join(
+			config.Conf.GetDbPath(),
+			ins,
+		),
+		0600,nil)
+	if err != nil {
+		panic(err)
+	}
+
+	c.Order.DB,err = bolt.Open(
+		filepath.Join(
+			config.Conf.GetTPath(),
+			ins,
+		),
 		0600,nil)
 	if err != nil {
 		panic(err)

@@ -183,6 +183,7 @@ type Config struct {
 	Static string
 	Templates string
 	DbPath string
+	TPath string
 	//RunAll bool
 	MdServer string
 	TrServer string
@@ -190,6 +191,13 @@ type Config struct {
 	Weight int
 }
 
+func (self *Config) GetTPath() string {
+	_,err := os.Stat(self.TPath)
+	if err != nil {
+		os.MkdirAll(self.TPath,0777)
+	}
+	return self.TPath
+}
 func (self *Config) GetDbPath() string {
 	_,err := os.Stat(self.DbPath)
 	if err != nil {
@@ -222,6 +230,7 @@ func NewConfig(fileName string)  *Config {
 		c.Static = "static"
 		c.Templates = "templates"
 		c.DbPath = "ctpdb"
+		c.TPath = "ctpTrader"
 
 		//c.RunAll = false
 		c.DefaultUser = "150797"
