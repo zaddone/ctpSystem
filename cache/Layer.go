@@ -4,7 +4,7 @@ import(
 	"fmt"
 	//"io"
 	//"github.com/zaddone/analog/fitting"
-	"github.com/zaddone/ctpSystem/config"
+	//"github.com/zaddone/ctpSystem/config"
 	"github.com/boltdb/bolt"
 	"encoding/binary"
 	"encoding/gob"
@@ -193,10 +193,10 @@ func (self *Layer) getTemplate(dis bool){
 	//	self.tem = nil
 	//	return
 	//}
-	if config.Conf.IsTrader{
-		self.ca.Order.Update(1,self.tem.Dis,self.tem.can)
+	//if config.Conf.IsTrader{
+	self.ca.Order.Update(1,self.tem.Dis,self.tem.can)
 		//OpenInsOrder(self.tem.can,self.tem.Dis)
-	}
+	//}
 
 	//self.tem.Save()
 }
@@ -365,7 +365,7 @@ func (self *Layer) add(c Element) bool {
 	for _,_c := range self.cans{
 		self.sum += math.Abs(_c.Diff())
 	}
-	//if self.tag == 1 {
+	if self.tag == 1 {
 		//isU:= true
 		if self.tem != nil {
 			//isU = self.checkTem()
@@ -380,7 +380,7 @@ func (self *Layer) add(c Element) bool {
 		//(e.Val() > e1.Val()) == (self.direction<0){
 			self.getTemplate(self.direction<0)
 		//}
-	//}
+	}
 
 	return true
 

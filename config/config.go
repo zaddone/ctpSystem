@@ -23,6 +23,7 @@ func init(){
 	//flag.Parse()
 	Conf = NewConfig(*LogFileName)
 }
+
 type UserInfo struct {
 	BrokerID string
 	UserID string
@@ -37,8 +38,8 @@ type UserInfo struct {
 
 func (self *UserInfo)RunTr(path string,local string,hand func([]byte)){
 	for{
-	self.sendTr = make(chan []byte,100)
-	runComm(path,[]string{
+		self.sendTr = make(chan []byte,100)
+		runComm(path,[]string{
 			self.BrokerID,
 			self.UserID,
 			self.Password,
@@ -189,6 +190,7 @@ type Config struct {
 	TrServer string
 	IsTrader bool
 	Weight int
+	Example []string
 }
 
 func (self *Config) GetTPath() string {
@@ -276,6 +278,15 @@ func NewConfig(fileName string)  *Config {
 		}
 		c.MdServer = "mdServer/mdServer"
 		c.TrServer = "traderServer/traderServer"
+		c.Example = []string{
+			"AP001",
+			"AP003",
+			"AP005",
+			"AP007",
+			"AP010",
+			"AP911",
+			"AP912",
+		}
 
 		c.Weight = 4
 		c.IsTrader = true
