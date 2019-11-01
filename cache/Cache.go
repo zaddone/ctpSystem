@@ -259,16 +259,18 @@ func StoreCache(info map[string]string){
 		//Order:InsOrder{InsInfo:info},
 	}
 	CacheMap.Store(ins,c)
-	isAdd := false
-	for _,e := range config.Conf.Example{
-		isAdd =  ins == e
-		if isAdd {
-			break
-		}
-	}
 
-	if !isAdd {
-		return
+	if config.Conf.IsTrader{
+		isAdd := false
+		for _,e := range config.Conf.Example{
+			isAdd =  ins == e
+			if isAdd {
+				break
+			}
+		}
+		if !isAdd {
+			return
+		}
 	}
 	c.L=NewLayer(c)
 	//fmt.Println(p)
