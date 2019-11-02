@@ -121,10 +121,11 @@ private:
     void sendOrderInsert(
             const char *ins,
             const char *ExchangeID,
-            const char *OrderRef,
+            //const char *OrderRef,
             const char fsetFlag,
             const char dis,
-            const double price=0);
+            const double price,
+            const double stopPrice);
     //void investorPosition(const char * ins);
     const char * path;
     bool queryIns;

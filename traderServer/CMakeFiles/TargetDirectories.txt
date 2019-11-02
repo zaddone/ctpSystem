@@ -1,3 +1,0 @@
-/root/go/src/github.com/zaddone/ctpSystem/traderServer/CMakeFiles/rebuild_cache.dir
-/root/go/src/github.com/zaddone/ctpSystem/traderServer/CMakeFiles/traderServer.dir
-/root/go/src/github.com/zaddone/ctpSystem/traderServer/CMakeFiles/edit_cache.dir

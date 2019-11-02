@@ -6,7 +6,7 @@ TPath = "/data/ctpdbT"
 MdServer = "mdServer/mdServer"
 TrServer = "traderServer/traderServer"
 Weight = 4
-IsTrader = true
+IsTrader = false
 DefaultUser = "153985"
 Example = ["AP001","AP003","AP005","AP007","AP010","AP911","AP912"]
 

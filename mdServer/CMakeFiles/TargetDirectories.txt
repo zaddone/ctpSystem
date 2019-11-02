@@ -1,3 +1,0 @@
-/root/go/src/github.com/zaddone/ctpSystem/mdServer/CMakeFiles/rebuild_cache.dir
-/root/go/src/github.com/zaddone/ctpSystem/mdServer/CMakeFiles/mdServer.dir
-/root/go/src/github.com/zaddone/ctpSystem/mdServer/CMakeFiles/edit_cache.dir

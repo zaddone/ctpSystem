@@ -10,7 +10,7 @@ import(
 	//"os"
 )
 var (
-	Count [5][3]float64
+	Count [5][4]float64
 	OrderCount [6]float64
 	//KeyChan = make(chan *MsgKey,100)
 	//InsInfoMap sync.Map
@@ -25,7 +25,9 @@ func AddCandle(c *Candle) {
 	}
 
 	ca := c_.(*Cache)
-	go c.ToSave(ca.DB)
+	if config.Conf.IsTrader{
+		go c.ToSave(ca.DB)
+	}
 	if ca.L != nil {
 		ca.L.Add(c)
 	}

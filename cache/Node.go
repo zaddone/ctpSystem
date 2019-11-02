@@ -11,6 +11,8 @@ type Element interface{
 	Dur() int64
 	Each(func(Element)error) error
 	Name() string
+	Max() float64
+	Min() float64
 }
 type Node struct {
 	Eles []Element
@@ -39,6 +41,20 @@ func NewNode(eles []Element) (n *Node) {
 	return n
 }
 
+func (self *Node) Min() float64{
+	if self.Diff_>0 {
+		return self.Eles[0].Min()
+	}else{
+		return self.Eles[len(self.Eles)-1].Min()
+	}
+}
+func (self *Node) Max() float64{
+	if self.Diff_<0 {
+		return self.Eles[0].Max()
+	}else{
+		return self.Eles[len(self.Eles)-1].Max()
+	}
+}
 func (self *Node) Name() (n string){
 	return self.Eles[0].Name()
 	//self.Each(func(e Element)error{

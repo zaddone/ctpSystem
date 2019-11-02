@@ -156,7 +156,7 @@ void TraderSpi::routeHand(const char *data){
     }
     case 12:{
         if (i<6)break;
-        this->sendOrderInsert(str[1],str[2],str[3],str[4][0],str[5][0],atof(str[6]));
+        this->sendOrderInsert(str[1],str[2],str[3][0],str[4][0],atof(str[5]),atof(str[6]));
         //this->sendOrderClose(str[1],str[2]);
         break;
     }
@@ -812,10 +812,10 @@ void TraderSpi::sendOrderOpen(
 void TraderSpi::sendOrderInsert(
         const char *ins,
         const char *ExchangeID,
-        const char *OrderRef,
         const char setFlag,
         const char dis,
-        const double price){
+        const double price,
+        const double stopPrice){
     CThostFtdcInputOrderField order;
     memset(&order,0,sizeof(order));
     strcpy(order.BrokerID,this->userReq.BrokerID);
@@ -823,7 +823,7 @@ void TraderSpi::sendOrderInsert(
     strcpy(order.InstrumentID,ins);
     strcpy(order.UserID,this->userReq.UserID);
     strcpy(order.ExchangeID,ExchangeID);
-    strcpy(order.OrderRef,OrderRef);
+    //strcpy(order.OrderRef,OrderRef);
     order.ContingentCondition =THOST_FTDC_CC_Immediately;
     order.Direction = dis;
     order.CombOffsetFlag[0] = setFlag;
@@ -836,16 +836,17 @@ void TraderSpi::sendOrderInsert(
     order.IsAutoSuspend = 0;
     order.UserForceClose = 0;
     //cout<<"price: "<<price<<endl;
-    if (price==0){
-        order.OrderPriceType = THOST_FTDC_OPT_AnyPrice;
-        order.LimitPrice = 0;
-        order.TimeCondition = THOST_FTDC_TC_IOC;
-    }else{
-        order.OrderPriceType = THOST_FTDC_OPT_LimitPrice;
-        order.LimitPrice = price;
-        order.TimeCondition = THOST_FTDC_TC_GFD;
-        //order.TimeCondition = THOST_FTDC_TC_IOC;
-    }
+    //if (price==0){
+    //    order.OrderPriceType = THOST_FTDC_OPT_AnyPrice;
+    //    order.LimitPrice = 0;
+    //    order.TimeCondition = THOST_FTDC_TC_IOC;
+    //}else{
+    order.OrderPriceType = THOST_FTDC_OPT_LimitPrice;
+    order.LimitPrice = price;
+    order.TimeCondition = THOST_FTDC_TC_GFD;
+    order.StopPrice = stopPrice;
+    //order.TimeCondition = THOST_FTDC_TC_IOC;
+    //}
     while (true)
     {
         int iResult = this->trApi->ReqOrderInsert(&order,this->getRequestID());
@@ -926,8 +927,8 @@ void TraderSpi::OnRtnOrder(CThostFtdcOrderField *pOrder){
 
     if (pOrder->CombOffsetFlag[0] == THOST_FTDC_OF_Open)
     if (pOrder->OrderStatus == '3' || pOrder->OrderStatus=='4'){
-        this->sendOrderAction(pOrder->InstrumentID,pOrder->ExchangeID,pOrder->OrderRef);
-        return;
+        //this->sendOrderAction(pOrder->InstrumentID,pOrder->ExchangeID,pOrder->OrderRef);
+        cout<<"orderWait "<<pOrder->InstrumentID<<" "<<pOrder->OrderRef<<endl;
     }else if (pOrder->OrderStatus=='5'){
         cout<<"orderCancel "<<pOrder->InstrumentID<<" "<<pOrder->OrderRef<<endl;
     }

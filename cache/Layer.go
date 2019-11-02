@@ -4,7 +4,7 @@ import(
 	"fmt"
 	//"io"
 	//"github.com/zaddone/analog/fitting"
-	//"github.com/zaddone/ctpSystem/config"
+	"github.com/zaddone/ctpSystem/config"
 	"github.com/boltdb/bolt"
 	"encoding/binary"
 	"encoding/gob"
@@ -79,25 +79,39 @@ func (self *Layer)checkTemStop(){
 func (self *Layer) checkTem() (isok bool) {
 	c_ := self.getLast()
 
-	if self.tag ==1 {
+	//if self.tag ==1 {
 		//if self.par!=nil &&
 		//self.par.tem != nil &&
 		//self.par.tem.Dis != self.tem.Dis {
-			dis_:= c_.Val() - self.tem.can.Val()
-			absDis := math.Abs(dis_)
-			isok = (dis_>0) == self.tem.Dis
 			t := self.tag-1
-			if isok {
-				self.tem.Stats = 2
-				Count[t][0] += absDis
+			var Diff float64
+			if self.tem.Dis {
+				Diff = c_.Min() - self.tem.can.Max()
 			}else{
-				self.tem.Stats = 1
-				Count[t][0] -= absDis
+				Diff = c_.Max() - self.tem.can.Min()
 			}
-			Count[t][self.tem.Stats]++
+			if self.tem.Dis == (Diff>0){
+			//if isok_ {
+				Count[t][3]++
+			}else{
+				Count[t][2]++
+			}
+			dis_:= c_.Val() - self.tem.can.Val()
+			//absDis := math.Abs(dis_)
+			if  (dis_>0) == self.tem.Dis {
+			//if isok {
+				Count[t][1]++
+				//self.tem.Stats = 1
+				//Count[t][0] += absDis
+			}else{
+				Count[t][0]++
+				//self.tem.Stats = 0
+				//Count[t][0] -= absDis
+			}
+			//Count[t][self.tem.Stats]++
 			//fmt.Println(Count[t],c_.Time() - self.tem.can.Time())
 		//}
-	}
+	//}
 
 
 	self.tem = nil
@@ -193,10 +207,10 @@ func (self *Layer) getTemplate(dis bool){
 	//	self.tem = nil
 	//	return
 	//}
-	//if config.Conf.IsTrader{
-	self.ca.Order.Update(1,self.tem.Dis,self.tem.can)
+	if config.Conf.IsTrader{
+		self.ca.Order.Update(1,self.tem.Dis,self.tem.can)
 		//OpenInsOrder(self.tem.can,self.tem.Dis)
-	//}
+	}
 
 	//self.tem.Save()
 }
@@ -283,7 +297,7 @@ func (self *Layer) initAdd (c Element){
 		return
 	}
 	var maxD,absMaxD float64
-	self.sum  += math.Abs(c.Diff())
+	self.sum  += c.Max()-c.Min()
 	var splitID int
 	for i,_c := range self.cans[:le] {
 		//sum += math.Abs(_c.Diff())
@@ -315,7 +329,8 @@ func (self *Layer) add(c Element) bool {
 	le := len(self.cans)
 	self.cans = append(self.cans,c)
 	var absMaxD, maxD float64
-	self.sum  += math.Abs(c.Diff())
+	//self.sum  += math.Abs(c.Diff())
+	self.sum  += c.Max()-c.Min()
 	//sum  := math.Abs(c.Diff())
 	var splitID int
 	for i,_c := range self.cans[:le] {
@@ -363,7 +378,8 @@ func (self *Layer) add(c Element) bool {
 	self.cans = self.cans[splitID:]
 	self.sum = 0
 	for _,_c := range self.cans{
-		self.sum += math.Abs(_c.Diff())
+		//self.sum += math.Abs(_c.Diff())
+		self.sum  += _c.Max()-_c.Min()
 	}
 	if self.tag == 1 {
 		//isU:= true

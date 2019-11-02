@@ -32,13 +32,11 @@ func main(){
 			return nil
 		}
 		for i,_ := range cache.Count{
-			cache.Count[i] = [3]float64{0,0,0}
+			cache.Count[i] = [4]float64{0,0,0,0}
 		}
 		cache.StoreCache(map[string]string{"InstrumentID":string(name)})
 		//fmt.Println(string(name))
 		err := b.ForEach(func(k,v []byte)error{
-
-
 			c := cache.NewCandle(
 				string(name),
 				int64(binary.BigEndian.Uint64(k)),
@@ -55,18 +53,19 @@ func main(){
 		if err != nil {
 			return err
 		}
-		var c0,c1,c2 float64
+		var c0,c1,c2,c3 float64
 		for _,c := range cache.Count{
 			c0+=c[0]
 			c1+=c[1]
 			c2+=c[2]
+			c3+=c[3]
 			//sum += c[0]
 			//if (c[1]+c[2]) >0 {
 			//	fmt.Println(string(name),i,c,c[1]/c[2])
 			//}
 		}
 		if c1+c2 >0 {
-			fmt.Println(string(name),c0,c1,c2,c1/c2)
+			fmt.Println(string(name),c0,c1,c2,c3,c0/c1,c2/c3)
 		}
 		return nil
 	})

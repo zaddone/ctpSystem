@@ -34,6 +34,12 @@ func NewCandle(ins string,date int64,db []byte) (c *Candle) {
 	c.d = c.Ask - c.Bid
 	return c
 }
+func (self *Candle) Max()float64{
+	return self.Ask
+}
+func (self *Candle) Min()float64{
+	return self.Bid
+}
 
 func (self *Candle) GetUpperLimitPrice() float64 {
 	return self.upperLimitPrice
