@@ -15,7 +15,7 @@ var (
 	//KeyChan = make(chan *MsgKey,100)
 	//InsInfoMap sync.Map
 	//InsOrderMap sync.Map
-	Order int = 1
+	//Order int = 1
 	CacheMap sync.Map
 )
 func AddCandle(c *Candle) {
@@ -41,11 +41,14 @@ type InsOrder struct {
 	Open *Candle
 	OpenP float64
 	OpenPrice float64
-	//OpenRef string
+	OpenRef string
+
+	Stop float64
+
 
 	Close *Candle
 	ClosePrice float64
-	//CloseRef string
+	CloseRef string
 	//Order int
 
 	State int
@@ -94,13 +97,6 @@ func (self *InsOrder) UpdateDB(p float64) error {
 }
 func (self *InsOrder)Update(state int,v ...interface{}) {
 
-	//defer func(){
-	//	if self.State == 0 {
-	//		Order++
-	//		//self.Order = Order
-	//	}
-	//}()
-	//return
 	if (self.State+1) != state {
 		//fmt.Println(self.InsInfo["InstrumentID"],state,self.State)
 		//if self.State == 2 ||
@@ -117,8 +113,8 @@ func (self *InsOrder)Update(state int,v ...interface{}) {
 		self.SaveDB(self.OpenP)
 	case 2:
 		if !v[0].(bool){
-			self.DeleteDB()
-			self.State = 0
+			//self.DeleteDB()
+			//self.State = 0
 		}else{
 			self.OpenPrice = v[1].(float64)
 			self.UpdateDB(self.OpenPrice)
@@ -165,25 +161,24 @@ func (self *InsOrder)OpenOrder(open *Candle,_dir bool){
 	self.Dis = _dir
 	self.OpenPrice = 0
 	var dis string
-	//var price float64
+	//var stop float64
 	if self.Dis {
 		dis = "0"
-		//stop = self.Stop.Bid
-		self.OpenP = self.Open.Ask
+		self.Stop = self.Stop.Ask
+		self.OpenP = self.Open.Bid
 	}else{
 		dis = "1"
-		//stop = self.Stop.Ask
-		self.OpenP = self.Open.Bid
+		self.Stop = self.Stop.Bid
+		self.OpenP = self.Open.Ask
 	}
 	Order++
 	config.Conf.DefUser().SendTr([]byte(
-		fmt.Sprintf("OrderInsert %s %s %d 0 %s %.5f",
+		fmt.Sprintf("OrderInsert %s %s 0 %s %.5f %.5f",
 		self.Open.Name(),
 		self.InsInfo["ExchangeID"],
-		Order,
 		dis,
 		self.OpenP,
-		//stop,
+		self.Stop,
 	)))
 }
 
@@ -202,14 +197,12 @@ func (self *InsOrder)CloseOrder(c *Candle){
 		//f = self.Open.GetLowerLimitPrice()
 		//f = self.Close.Ask
 	}
-	Order++
+	//Order++
 	config.Conf.DefUser().SendTr(
 		[]byte(
-			fmt.Sprintf("OrderInsert %s %s %d 3 %s %.5f",
+			fmt.Sprintf("OrderInsert %s %s 3 %s %.5f 0",
 			self.Open.Name(),
 			self.InsInfo["ExchangeID"],
-		//	self.Close.Time(),
-			Order,
 			dis,
 			f),
 		),

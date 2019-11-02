@@ -36,6 +36,7 @@ var (
 		"ins":traderIns,
 		"trade":tradeBack,
 		"orderCancel":orderCancelBack,
+		"orderWait":orderWaitBack,
 		"InvestorPositionDetail":traderPosition,
 	}
 	MarketRouterMap =map[string]func([]byte){
@@ -297,6 +298,14 @@ func runRouter(c chan []byte,rm map[string]func([]byte)){
 			h(dbs[1])
 		}
 	}
+}
+func orderWaitBack(db []byte){
+	dbs := strings.Split(string(db)," ")
+	ca := cache.Show(dbs[0])
+	if ca==nil {
+		return
+	}
+	ca.Order.Update(2,false)
 }
 func orderCancelBack(db []byte){
 	dbs := strings.Split(string(db)," ")

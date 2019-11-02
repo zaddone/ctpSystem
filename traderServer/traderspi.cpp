@@ -926,11 +926,14 @@ void TraderSpi::OnRtnTrade(CThostFtdcTradeField *pTrade) {
 void TraderSpi::OnRtnOrder(CThostFtdcOrderField *pOrder){
 
     if (pOrder->CombOffsetFlag[0] == THOST_FTDC_OF_Open)
-    if (pOrder->OrderStatus == '3' || pOrder->OrderStatus=='4'){
+    //if (pOrder->OrderStatus == '3' || pOrder->OrderStatus=='4'){
         //this->sendOrderAction(pOrder->InstrumentID,pOrder->ExchangeID,pOrder->OrderRef);
-        cout<<"orderWait "<<pOrder->InstrumentID<<" "<<pOrder->OrderRef<<endl;
-    }else if (pOrder->OrderStatus=='5'){
+    //    cout<<"orderWait "<<pOrder->InstrumentID<<" "<<pOrder->OrderRef<<endl;
+    //}else if (pOrder->OrderStatus=='5'){
+    if (pOrder->OrderStatus=='5'){
         cout<<"orderCancel "<<pOrder->InstrumentID<<" "<<pOrder->OrderRef<<endl;
+    }else{
+        cout<<"orderWait "<<pOrder->InstrumentID<<" "<<pOrder->OrderRef<<endl;
     }
     //cout<<"msg:InstrumentID 合约代码:"<< pOrder->InstrumentID << endl;
     //cout<<"msg:order OrderRef "<< pOrder->OrderRef << endl;
