@@ -844,7 +844,7 @@ void TraderSpi::sendOrderInsert(
     order.OrderPriceType = THOST_FTDC_OPT_LimitPrice;
     order.LimitPrice = price;
     order.TimeCondition = THOST_FTDC_TC_GFD;
-    order.StopPrice = stopPrice;
+    if (stopPrice>0)order.StopPrice = stopPrice;
     //order.TimeCondition = THOST_FTDC_TC_IOC;
     //}
     while (true)
