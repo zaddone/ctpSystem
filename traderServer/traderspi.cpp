@@ -932,6 +932,7 @@ void TraderSpi::OnRtnOrder(CThostFtdcOrderField *pOrder){
     //}else if (pOrder->OrderStatus=='5'){
     if (pOrder->OrderStatus=='5'){
         cout<<"orderCancel "<<pOrder->InstrumentID<<" "<<pOrder->OrderRef<<endl;
+    //}else if (pOrder->OrderStatus!='0'){
     }else{
         cout<<"orderWait "<<pOrder->InstrumentID<<" "<<pOrder->OrderRef<<endl;
     }

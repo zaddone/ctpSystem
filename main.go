@@ -305,7 +305,7 @@ func orderWaitBack(db []byte){
 	if ca==nil {
 		return
 	}
-	ca.Order.Update(2,false)
+	ca.Order.Update(2,dbs[1])
 }
 func orderCancelBack(db []byte){
 	dbs := strings.Split(string(db)," ")
@@ -328,7 +328,7 @@ func tradeBack(db []byte){
 	}
 
 	if dbs[2]=="0"{
-		ca.Order.Update(2,true,c)
+		ca.Order.Update(2,c)
 		//fmt.Println(
 		//	"_open",
 		//	or.Open.Ask,

@@ -91,37 +91,44 @@ func (self *InsOrder) UpdateDB(p float64) error {
 			return fmt.Errorf("%s is Not Found",k)
 		}
 		return b.Put(k,append(v,[]byte(fmt.Sprintf(" %.2f",p))...))
-
 	})
-
 }
+
 func (self *InsOrder)Update(state int,v ...interface{}) {
 
-	if (self.State+1) != state {
-		//fmt.Println(self.InsInfo["InstrumentID"],state,self.State)
-		//if self.State == 2 ||
-		//self.State = 0
-		if (self.State == 4) {
-			self.State = 0
-		}
-		return
-	}
-	self.State = state
 	switch state {
 	case 1:
+		if self.State!= 0 {
+			return
+		}
+		self.State = state
 		self.OpenOrder(v[1].(*Candle),v[0].(bool))
 		self.SaveDB(self.OpenP)
 	case 2:
-		if !v[0].(bool){
-			//self.DeleteDB()
-			//self.State = 0
-		}else{
-			self.OpenPrice = v[1].(float64)
-			self.UpdateDB(self.OpenPrice)
-			//self.SaveOpen()
+		if (self.State!=1) || (self.State!=2) {
+			return
 		}
+		self.State = state
+		switch val := v[0].(type){
+		case bool:
+			self.DeleteDB()
+			self.State = 0
+		case float64:
+			self.OpenPrice = val
+			self.UpdateDB(self.OpenPrice)
+		case string:
+			self.OpenRef = val
 
+		}
 	case 3:
+		if (self.State!=2) {
+			return
+		}
+		if self.OpenPrice == 0 {
+			self.ActionCancel()
+			return
+		}
+		self.State = state
 		self.CloseOrder(v[0].(*Candle))
 		self.UpdateDB(self.Close.Val())
 	case 4:
@@ -155,6 +162,17 @@ func (self *InsOrder)Update(state int,v ...interface{}) {
 
 }
 
+func (self *InsOrder)ActionCancel(){
+	if len(self.OpenRef)==0 {
+		return
+	}
+	config.Conf.DefUser().SendTr([]byte(
+		fmt.Sprintf("OrderAction %s %s %s",
+		self.Open.Name(),
+		self.InsInfo["ExchangeID"],
+		self.OpenRef,
+	)))
+}
 func (self *InsOrder)OpenOrder(open *Candle,_dir bool){
 	//ins := self.Open.Name()
 	self.Open = open
@@ -164,14 +182,14 @@ func (self *InsOrder)OpenOrder(open *Candle,_dir bool){
 	//var stop float64
 	if self.Dis {
 		dis = "0"
-		self.Stop = self.Stop.Ask
+		self.Stop  = self.Open.Ask
 		self.OpenP = self.Open.Bid
 	}else{
 		dis = "1"
-		self.Stop = self.Stop.Bid
+		self.Stop  = self.Open.Bid
 		self.OpenP = self.Open.Ask
 	}
-	Order++
+	//Order++
 	config.Conf.DefUser().SendTr([]byte(
 		fmt.Sprintf("OrderInsert %s %s 0 %s %.5f %.5f",
 		self.Open.Name(),
