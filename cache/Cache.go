@@ -55,6 +55,9 @@ type InsOrder struct {
 
 }
 func (self *InsOrder) SaveDB(p float64) error {
+	if self.DB == nil {
+		return fmt.Errorf("db is nil")
+	}
 	return self.DB.Update(func(t *bolt.Tx)error{
 		b,err := t.CreateBucketIfNotExists([]byte(self.InsInfo["InstrumentID"]))
 		if err != nil {
@@ -70,6 +73,9 @@ func (self *InsOrder) SaveDB(p float64) error {
 }
 
 func (self *InsOrder) DeleteDB() error {
+	if self.DB == nil {
+		return fmt.Errorf("db is nil")
+	}
 	return self.DB.Update(func(t *bolt.Tx)error{
 		b  := t.Bucket([]byte(self.InsInfo["InstrumentID"]))
 		if b == nil {
@@ -80,6 +86,9 @@ func (self *InsOrder) DeleteDB() error {
 }
 
 func (self *InsOrder) UpdateDB(p float64) error {
+	if self.DB == nil {
+		return fmt.Errorf("db is nil")
+	}
 	return self.DB.Update(func(t *bolt.Tx)error{
 		b  := t.Bucket([]byte(self.InsInfo["InstrumentID"]))
 		if b == nil {
@@ -254,6 +263,7 @@ func StoreCache(info map[string]string){
 	ins := info["InstrumentID"]
 	_ , ok := CacheMap.Load(ins)
 	if ok{
+		fmt.Println("store",ins)
 		return
 	}
 
@@ -290,14 +300,14 @@ func StoreCache(info map[string]string){
 	//var err error
 
 	c.Order=InsOrder{InsInfo:info}
-	c.Order.DB,err = bolt.Open(
-		filepath.Join(
-			config.Conf.GetTPath(),
-			ins,
-		),
-		0600,nil)
-	if err != nil {
-		panic(err)
-	}
+	//c.Order.DB,err = bolt.Open(
+	//	filepath.Join(
+	//		config.Conf.GetTPath(),
+	//		ins,
+	//	),
+	//	0600,nil)
+	//if err != nil {
+	//	panic(err)
+	//}
 	return
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.5.0, 2019-11-02T20:12:54. -->
+<!-- Written by QtCreator 4.5.0, 2019-11-04T20:07:36. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -341,7 +341,7 @@
     <value type="QString" key="CMakeProjectManager.CMakeRunConfiguation.Title">traderServer</value>
     <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.Arguments">9999 150797 abc2019 Dimon2019 tcp://218.202.237.33:10102 /tmp/trader</value>
     <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.UserWorkingDirectory"></value>
-    <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.UserWorkingDirectory.default">/tmp/QtCreator-gBMfSl/qtc-cmake-BVrqCAtU</value>
+    <value type="QString" key="CMakeProjectManager.CMakeRunConfiguration.UserWorkingDirectory.default">/tmp/QtCreator-wrogtZ/qtc-cmake-opHytFCO</value>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">traderServer</value>

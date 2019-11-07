@@ -72,6 +72,23 @@ func runComm(
 	ctx,cancel := context.WithCancel(context.Background())
 	cmd := exec.CommandContext(ctx,path,word...)
 	//cmd.Stdout = io.SeekStart
+	//outerr,err := cmd.StderrPipe()
+	//if err != nil {
+	//	panic(err)
+	//}
+	//errbuf := bufio.NewReader(outerr)
+	//go func (){
+	//	line,err := errbuf.ReadBytes('\n')
+	//	if err != nil {
+	//		fmt.Println(err)
+	//		cancel()
+	//		return
+	//	}
+	//	log.Println(string(line))
+	//	fmt.Println(err)
+	//	cancel()
+	//}()
+
 	out,err := cmd.StdoutPipe()
 	if err != nil {
 		panic(err)
