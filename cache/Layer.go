@@ -9,6 +9,7 @@ import(
 	"encoding/binary"
 	"encoding/gob"
 	"bytes"
+	"time"
 	//"sync"
 )
 type Temple struct{
@@ -278,8 +279,11 @@ func (self *Layer) baseAdd(e Element){
 }
 func (self *Layer) Add(e Element){
 	if self.lastEl !=nil {
+		//end := time.Unix(e.LastTime()).Day() != 
+		//begin := time.Unix(self.lastEl.LastTime())
+
 		dl := e.LastTime() -  self.lastEl.LastTime()
-		if dl <0 || dl > 100 {
+		if dl <0 || (time.Unix(e.LastTime(),0).Day() != time.Unix(self.lastEl.LastTime(),0).Day()) {
 			//fmt.Println("timeOut",dl,self.lastEl.Val(),e.Val())
 			self.canChan<-nil
 		}

@@ -105,6 +105,7 @@ func (self *InsOrder) UpdateDB(p float64) error {
 
 func (self *InsOrder)Update(state int,v ...interface{}) {
 
+	fmt.Println(self.InsInfo["InstrumentID"],state,v)
 	switch state {
 	case 1:
 		if self.State!= 0 {
@@ -141,6 +142,10 @@ func (self *InsOrder)Update(state int,v ...interface{}) {
 		self.CloseOrder(v[0].(*Candle))
 		self.UpdateDB(self.Close.Val())
 	case 4:
+		if self.State+1 != state{
+			self.State = 0
+			return
+		}
 		diff := self.Close.Val() - self.Open.Val()
 		self.ClosePrice = v[0].(float64)
 		self.UpdateDB(self.ClosePrice)
