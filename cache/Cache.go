@@ -131,7 +131,7 @@ func (self *InsOrder)Update(state int,v ...interface{}) {
 
 		}
 	case 3:
-		if (self.State!=2) {
+		if (self.State==0) {
 			return
 		}
 		if self.OpenPrice == 0 {
@@ -141,7 +141,9 @@ func (self *InsOrder)Update(state int,v ...interface{}) {
 		self.State = state
 		self.CloseOrder(v[0].(*Candle))
 		self.UpdateDB(self.Close.Val())
+
 	case 4:
+
 		if self.State+1 != state{
 			self.State = 0
 			return
@@ -171,6 +173,7 @@ func (self *InsOrder)Update(state int,v ...interface{}) {
 		}
 		fmt.Println(OrderCount)
 		self.State = 0
+
 	}
 	return
 

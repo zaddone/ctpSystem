@@ -301,7 +301,8 @@ func (self *Layer) initAdd (c Element){
 		return
 	}
 	var maxD,absMaxD float64
-	self.sum  += c.Max()-c.Min()
+	//self.sum  += c.Max()-c.Min()
+	self.sum  += math.Abs(c.Diff())
 	var splitID int
 	for i,_c := range self.cans[:le] {
 		//sum += math.Abs(_c.Diff())
@@ -318,8 +319,10 @@ func (self *Layer) initAdd (c Element){
 	}
 	self.direction = maxD
 	self.cans = self.cans[splitID:]
+	self.sum = 0
 	for _,_c := range self.cans{
-		self.sum += math.Abs(_c.Diff())
+		//self.sum  += _c.Max()-_c.Min()
+		self.sum  += math.Abs(_c.Diff())
 	}
 
 }
@@ -333,8 +336,8 @@ func (self *Layer) add(c Element) bool {
 	le := len(self.cans)
 	self.cans = append(self.cans,c)
 	var absMaxD, maxD float64
-	//self.sum  += math.Abs(c.Diff())
-	self.sum  += c.Max()-c.Min()
+	self.sum  += math.Abs(c.Diff())
+	//self.sum  += c.Max()-c.Min()
 	//sum  := math.Abs(c.Diff())
 	var splitID int
 	for i,_c := range self.cans[:le] {
@@ -382,8 +385,8 @@ func (self *Layer) add(c Element) bool {
 	self.cans = self.cans[splitID:]
 	self.sum = 0
 	for _,_c := range self.cans{
-		//self.sum += math.Abs(_c.Diff())
-		self.sum  += _c.Max()-_c.Min()
+		self.sum += math.Abs(_c.Diff())
+		//self.sum  += _c.Max()-_c.Min()
 	}
 	if self.tag == 1 {
 		//isU:= true
