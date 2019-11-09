@@ -71,7 +71,7 @@ void TraderSpi::routeHand(const char *data){
     strcpy(db,data);
     //cout<<"db "<<db<<endl;
     char *p;
-    char sep[] = " ";
+    char sep[] = ",";
     char str[100][1024];
     p = strtok(db,sep);
     int i;
@@ -163,6 +163,7 @@ void TraderSpi::routeHand(const char *data){
     case 13:{
         if (i<3)break;
         this->sendOrderAction(str[1],str[2],str[3]);
+        break;
     }
     default:{
         printf("default %s %s end",data,str[0]);
@@ -875,10 +876,13 @@ void TraderSpi::sendOrderAction(
     strcpy(action.InstrumentID,ins);
     strcpy(action.UserID,this->userReq.UserID);
     strcpy(action.ExchangeID,ExchangeID);
-    strcpy(action.OrderRef,OrderRef);
     action.ActionFlag  = THOST_FTDC_AF_Delete;
     action.FrontID = this->frontID;
     action.SessionID = this->sessionID;
+    //memcpy(action.OrderRef,OrderRef,sizeof(action.OrderRef));
+    strcpy(action.OrderRef,OrderRef);
+    //cout<<action.OrderRef<<"-"<<OrderRef<<endl;
+
     while (true)
     {
         int iResult = this->trApi->ReqOrderAction(&action,this->getRequestID());
@@ -925,16 +929,19 @@ void TraderSpi::OnRtnTrade(CThostFtdcTradeField *pTrade) {
 }
 void TraderSpi::OnRtnOrder(CThostFtdcOrderField *pOrder){
 
-    if (pOrder->CombOffsetFlag[0] == THOST_FTDC_OF_Open)
-    //if (pOrder->OrderStatus == '3' || pOrder->OrderStatus=='4'){
-        //this->sendOrderAction(pOrder->InstrumentID,pOrder->ExchangeID,pOrder->OrderRef);
-    //    cout<<"orderWait "<<pOrder->InstrumentID<<" "<<pOrder->OrderRef<<endl;
-    //}else if (pOrder->OrderStatus=='5'){
-    if (pOrder->OrderStatus=='5'){
-        cout<<"orderCancel "<<pOrder->InstrumentID<<" "<<pOrder->OrderRef<<endl;
-    //}else if (pOrder->OrderStatus!='0'){
-    }else{
-        cout<<"orderWait "<<pOrder->InstrumentID<<" "<<pOrder->OrderRef<<endl;
+    if (pOrder->CombOffsetFlag[0] == THOST_FTDC_OF_Open){
+   	 //if (pOrder->OrderStatus == '3' || pOrder->OrderStatus=='4'){
+   	 //    this->sendOrderAction(pOrder->InstrumentID,pOrder->ExchangeID,pOrder->OrderRef);
+	 //    return;
+   	 //}
+   	 //    cout<<"orderWait "<<pOrder->InstrumentID<<" "<<pOrder->OrderRef<<endl;
+   	 //}else if (pOrder->OrderStatus=='5'){
+   	 if (pOrder->OrderStatus=='5'){
+   	     cout<<"orderCancel "<<pOrder->InstrumentID<<"-"<<pOrder->OrderRef<<endl;
+   	 //}else if (pOrder->OrderStatus!='0'){
+   	 }else{
+   	     cout<<"orderWait "<<pOrder->InstrumentID<<"-"<<pOrder->OrderRef<<endl;
+   	 }
     }
     //cout<<"msg:InstrumentID 合约代码:"<< pOrder->InstrumentID << endl;
     //cout<<"msg:order OrderRef "<< pOrder->OrderRef << endl;
@@ -951,7 +958,7 @@ void TraderSpi::OnRspOrderAction(
         CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast){
 
     if (pRspInfo && pRspInfo->ErrorID!=0){
-        cout<<pRspInfo->ErrorMsg<<endl;
+        cout<<"action info "<<pRspInfo->ErrorMsg<<endl;
         return;
     }
     //if (!bIsLast)return;

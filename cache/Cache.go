@@ -1,6 +1,7 @@
 package cache
 import(
 	"fmt"
+	"log"
 	//"strings"
 	//"time"
 	"sync"
@@ -105,17 +106,18 @@ func (self *InsOrder) UpdateDB(p float64) error {
 
 func (self *InsOrder)Update(state int,v ...interface{}) {
 
-	fmt.Println(self.InsInfo["InstrumentID"],state,v)
+	log.Println(self.InsInfo["InstrumentID"],self.State,state,v)
 	switch state {
 	case 1:
 		if self.State!= 0 {
 			return
 		}
 		self.State = state
+		self.OpenPrice = 0
 		self.OpenOrder(v[1].(*Candle),v[0].(bool))
 		self.SaveDB(self.OpenP)
 	case 2:
-		if (self.State!=1) || (self.State!=2) {
+		if (self.State!=1) && (self.State!=2) {
 			return
 		}
 		self.State = state
@@ -184,7 +186,7 @@ func (self *InsOrder)ActionCancel(){
 		return
 	}
 	config.Conf.DefUser().SendTr([]byte(
-		fmt.Sprintf("OrderAction %s %s %s",
+		fmt.Sprintf("OrderAction,%s,%s,%s",
 		self.Open.Name(),
 		self.InsInfo["ExchangeID"],
 		self.OpenRef,
@@ -208,7 +210,7 @@ func (self *InsOrder)OpenOrder(open *Candle,_dir bool){
 	}
 	//Order++
 	config.Conf.DefUser().SendTr([]byte(
-		fmt.Sprintf("OrderInsert %s %s 0 %s %.5f %.5f",
+		fmt.Sprintf("OrderInsert,%s,%s,0,%s,%.5f,%.5f",
 		self.Open.Name(),
 		self.InsInfo["ExchangeID"],
 		dis,
@@ -235,7 +237,7 @@ func (self *InsOrder)CloseOrder(c *Candle){
 	//Order++
 	config.Conf.DefUser().SendTr(
 		[]byte(
-			fmt.Sprintf("OrderInsert %s %s 3 %s %.5f 0",
+			fmt.Sprintf("OrderInsert,%s,%s,3,%s,%.5f,0",
 			self.Open.Name(),
 			self.InsInfo["ExchangeID"],
 			dis,

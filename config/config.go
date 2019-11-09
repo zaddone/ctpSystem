@@ -185,7 +185,7 @@ func (self *UserInfo) SendMd(db []byte) {
 	//}
 }
 func (self *UserInfo) SendTr(db []byte) {
-	//fmt.Println("tr",len(self.sendTr),string(db))
+	log.Println(string(db))
 	self.sendTr <- db
 	//select{
 	//case self.sendTr <- db:

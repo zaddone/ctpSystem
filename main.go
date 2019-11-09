@@ -129,7 +129,7 @@ func initHttpRouter(){
 		c.JSON(http.StatusOK,gin.H{"msg":"Success","word":words})
 	})
 	Router.GET("/wrun",func(c *gin.Context){
-		words := strings.Join(strings.Split(c.DefaultQuery("word",""),"_")," ")
+		words := c.DefaultQuery("word","")
 		if len(words) == 0 {
 			c.JSON(http.StatusOK,gin.H{"msg":"Word is nil","word":words})
 			return
@@ -143,7 +143,7 @@ func initHttpRouter(){
 		c.JSON(http.StatusOK,gin.H{"msg":"Success","word":words})
 	})
 	Router.GET("/trun",func(c *gin.Context){
-		words := strings.Join(strings.Split(c.DefaultQuery("word",""),"_")," ")
+		words := c.DefaultQuery("word","")
 		if len(words) == 0 {
 			c.JSON(http.StatusOK,gin.H{"msg":"Word is nil","word":words})
 			return
@@ -228,7 +228,7 @@ func traderPosition(db []byte){
 		d = "1"
 		f = can.GetLowerLimitPrice()
 	}
-	send := fmt.Sprintf("OrderInsert %s %s %d %s %s %.2f",dbs[3],dbs[4],OrderRef,t,d,f)
+	send := fmt.Sprintf("OrderInsert,%s,%s,%d,%s,%s,%.2f",dbs[3],dbs[4],OrderRef,t,d,f)
 	OrderRef++
 	fmt.Println(send)
 	u.SendTr([]byte(send))
@@ -242,7 +242,7 @@ func traderIns(db []byte){
 		insMap[vs[0]] = vs[1]
 	}
 	cache.StoreCache(insMap)
-	config.Conf.DefUser().SendMd([]byte("ins "+insMap["InstrumentID"]))
+	config.Conf.DefUser().SendMd([]byte("ins,"+insMap["InstrumentID"]))
 	//for _,v := range config.Conf.User{
 	//	v.SendMd([]byte("ins "+insMap["InstrumentID"]))
 	//}
@@ -259,7 +259,7 @@ func marketIns(db []byte){
 			if f.IsDir() {
 				return nil
 			}
-			db_ := []byte(string(db)+" "+f.Name())
+			db_ := []byte(string(db)+","+f.Name())
 			u.SendMd(db_)
 			//for _,v := range config.Conf.User{
 			//	v.SendMd(db_)
@@ -300,13 +300,15 @@ func runRouter(c chan []byte,rm map[string]func([]byte)){
 	}
 }
 func orderWaitBack(db []byte){
-	var dbs []string
-	for _,d := range strings.Split(string(db)," "){
-		if len(d)==0 {
-			continue
-		}
-		dbs = append(dbs,d)
-	}
+
+	dbs := strings.Split(string(db),"-")
+	//var dbs []string
+	//for _,d := range strings.Split(string(db)," "){
+	//	if len(d)==0 {
+	//		continue
+	//	}
+	//	dbs = append(dbs,d)
+	//}
 	ca := cache.Show(dbs[0])
 	if ca==nil {
 		return
@@ -314,14 +316,8 @@ func orderWaitBack(db []byte){
 	ca.Order.Update(2,dbs[1])
 }
 func orderCancelBack(db []byte){
-	var dbs []string
-	for _,d := range strings.Split(string(db)," "){
-		if len(d)==0 {
-			continue
-		}
-		dbs = append(dbs,d)
-	}
-	//dbs := strings.Split(string(db)," ")
+
+	dbs := strings.Split(string(db),"-")
 	ca := cache.Show(dbs[0])
 	if ca==nil {
 		return
@@ -329,14 +325,14 @@ func orderCancelBack(db []byte){
 	ca.Order.Update(2,false)
 }
 func tradeBack(db []byte){
-	//dbs := strings.Split(string(db)," ")
-	var dbs []string
-	for _,d := range strings.Split(string(db)," "){
-		if len(d)==0 {
-			continue
-		}
-		dbs = append(dbs,d)
-	}
+	dbs := strings.Split(string(db)," ")
+	//var dbs []string
+	//for _,d := range strings.Split(string(db)," "){
+	//	if len(d)==0 {
+	//		continue
+	//	}
+	//	dbs = append(dbs,d)
+	//}
 
 
 	ca := cache.Show(dbs[0])

@@ -113,7 +113,7 @@ void MarketSpi::routeHand(const char * data){
     strcpy(db,data);
 
     char *p;
-    char sep[] = " ";
+    char sep[] = ",";
     char str[100][1024];
     p = strtok(db,sep);
     int i;
