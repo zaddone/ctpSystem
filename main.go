@@ -313,7 +313,7 @@ func orderWaitBack(db []byte){
 	if ca==nil {
 		return
 	}
-	ca.Order.Update(2,dbs[1])
+	ca.Order.Update(2,dbs[1],dbs[2])
 }
 func orderCancelBack(db []byte){
 

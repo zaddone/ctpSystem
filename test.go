@@ -4,9 +4,9 @@ import(
 	//"os/exec"
 	"fmt"
 	//"bufio"
-	"time"
+	//"time"
 )
 func main(){
-	str := fmt.Sprintf("%d",time.Now().UnixNano())[:13]
+	str := fmt.Sprintf("%012d",14)
 	fmt.Println(str,len(str))
 }

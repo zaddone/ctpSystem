@@ -1,9 +1,12 @@
 #include <iostream>
 #include <unistd.h>
 //#include <sys/stat.h>
-#include <thread>
 //#include <string.h>
 #include "traderspi.h"
+#include <thread>
+//#include <mutex>
+//mutex mtx;
+//map<string , CThostFtdcOrderField> mapOrder;
 
 using namespace std;
 bool IsFlowControl(int iResult)
@@ -156,13 +159,13 @@ void TraderSpi::routeHand(const char *data){
     }
     case 12:{
         if (i<6)break;
-        this->sendOrderInsert(str[1],str[2],str[3][0],str[4][0],atof(str[5]),atof(str[6]));
+        this->sendOrderInsert(str[1],str[2],str[3],str[4][0],str[5][0],atof(str[6]),atof(str[7]));
         //this->sendOrderClose(str[1],str[2]);
         break;
     }
     case 13:{
-        if (i<3)break;
-        this->sendOrderAction(str[1],str[2],str[3]);
+        if (i<4)break;
+        this->sendOrderAction(str[1],str[2],str[3],str[4]);
         break;
     }
     default:{
@@ -417,11 +420,14 @@ void TraderSpi::OnRspUserLogin(
         //this->Login = true;
         this->frontID = pRspUserLogin->FrontID;
         this->sessionID = pRspUserLogin->SessionID;
+
         char trading[20]="TDay ";
         strcat(trading,this->trApi->GetTradingDay());
         this->send(trading);
         //strcpy(this->TradingDay,this->trApi->GetTradingDay());
-        //cout <<"Td connected "<< trading << endl;
+        cout <<"Td connected "<< trading << endl;
+        cout <<"frontID:"<< this->frontID << endl;
+        cout <<"sessionID:"<< this->sessionID << endl;
         //this->reqInstruments();
     }else if (7 == pRspInfo->ErrorID){
         this->swapPassword();
@@ -813,10 +819,12 @@ void TraderSpi::sendOrderOpen(
 void TraderSpi::sendOrderInsert(
         const char *ins,
         const char *ExchangeID,
+        const char *OrderRef,
         const char setFlag,
         const char dis,
         const double price,
         const double stopPrice){
+
     CThostFtdcInputOrderField order;
     memset(&order,0,sizeof(order));
     strcpy(order.BrokerID,this->userReq.BrokerID);
@@ -866,7 +874,8 @@ void TraderSpi::sendOrderInsert(
 void TraderSpi::sendOrderAction(
         const char *ins,
         const char *ExchangeID,
-        const char *OrderRef
+        const char *OrderRef,
+        const char *OrderSysID
         ){
 
     CThostFtdcInputOrderActionField action;
@@ -879,9 +888,23 @@ void TraderSpi::sendOrderAction(
     action.ActionFlag  = THOST_FTDC_AF_Delete;
     action.FrontID = this->frontID;
     action.SessionID = this->sessionID;
-    //memcpy(action.OrderRef,OrderRef,sizeof(action.OrderRef));
+    //TThostFtdcOrderRefType Oref = this->mapOrder[ins]
+    //strcpy(action.OrderRef,this->mapOrder[ins].OrderRef);
     strcpy(action.OrderRef,OrderRef);
-    //cout<<action.OrderRef<<"-"<<OrderRef<<endl;
+    strcpy(action.OrderSysID,OrderSysID);
+    //string _ins = action.InstrumentID;
+    //mtx.lock();
+    //if(mapOrder.find(_ins) == mapOrder.end()){
+    //	cout<<"findNot "<< _ins<<endl;
+    //    map<string , CThostFtdcOrderField>::iterator iter;  
+    //    for(iter = mapOrder.begin(); iter != mapOrder.end(); iter++)  
+    //        cout<<"check "<<iter->first<<' '<<iter->second.OrderRef<<endl;  
+    //}else{
+    //	cout<<"orderRef "<< mapOrder[_ins].OrderRef << endl;
+    //	strcpy(action.OrderRef,mapOrder[_ins].OrderRef);
+    //}
+    //mtx.unlock();
+    //cout << action.OrderRef << "-" << OrderRef << "-" << ExchangeID <<endl;
 
     while (true)
     {
@@ -940,7 +963,20 @@ void TraderSpi::OnRtnOrder(CThostFtdcOrderField *pOrder){
    	     cout<<"orderCancel "<<pOrder->InstrumentID<<"-"<<pOrder->OrderRef<<endl;
    	 //}else if (pOrder->OrderStatus!='0'){
    	 }else{
-   	     cout<<"orderWait "<<pOrder->InstrumentID<<"-"<<pOrder->OrderRef<<endl;
+   	     //cout<<"orderWait "<<pOrder->InstrumentID<<"-"<<pOrder->OrderSysID<<endl;
+   	     cout <<"orderWait "<<pOrder->InstrumentID << "-";
+	     cout <<pOrder->OrderRef << "-" << pOrder->OrderSysID << endl;
+	     //iter = this->mapOrder.find(pOrder->InstrumentID);
+	     //string ins = pOrder->InstrumentID;
+	     //mtx.lock();
+    	     //if(mapOrder.find(ins)==mapOrder.end()){
+	     //  mapOrder.insert(map<string,CThostFtdcOrderField>::value_type(ins,*pOrder));
+	     //  cout<<"insert "<< ins << endl;
+	     //}else{
+	     //  mapOrder[ins]=*pOrder;
+	     //  cout<<"update "<< ins << endl;
+	     //}
+	     //mtx.unlock();
    	 }
     }
     //cout<<"msg:InstrumentID 合约代码:"<< pOrder->InstrumentID << endl;
@@ -958,7 +994,13 @@ void TraderSpi::OnRspOrderAction(
         CThostFtdcRspInfoField *pRspInfo, int nRequestID, bool bIsLast){
 
     if (pRspInfo && pRspInfo->ErrorID!=0){
-        cout<<"action info "<<pRspInfo->ErrorMsg<<endl;
+        cout<<"action info ";
+        cout<< pRspInfo->ErrorMsg<<endl;
+        cout<< pInputOrderAction->InstrumentID <<",";
+        cout<< pInputOrderAction->ExchangeID <<",";
+        cout<< this->frontID <<",";
+        cout<< this->sessionID <<",";
+	cout<< pInputOrderAction->OrderRef <<endl;
         return;
     }
     //if (!bIsLast)return;

@@ -16,7 +16,7 @@ var (
 	//KeyChan = make(chan *MsgKey,100)
 	//InsInfoMap sync.Map
 	//InsOrderMap sync.Map
-	//Order int = 1
+	Order int = 1
 	CacheMap sync.Map
 )
 func AddCandle(c *Candle) {
@@ -43,6 +43,7 @@ type InsOrder struct {
 	OpenP float64
 	OpenPrice float64
 	OpenRef string
+	OpenSys string
 
 	Stop float64
 
@@ -130,7 +131,10 @@ func (self *InsOrder)Update(state int,v ...interface{}) {
 			self.UpdateDB(self.OpenPrice)
 		case string:
 			self.OpenRef = val
-
+			self.OpenSys = v[1].(string)
+			//if self.OpenRef != val {
+			//	fmt.Println("Is not same:",self.OpenRef,val)
+			//}
 		}
 	case 3:
 		if (self.State==0) {
@@ -186,10 +190,11 @@ func (self *InsOrder)ActionCancel(){
 		return
 	}
 	config.Conf.DefUser().SendTr([]byte(
-		fmt.Sprintf("OrderAction,%s,%s,%s",
+		fmt.Sprintf("OrderAction,%s,%s,%s,%s",
 		self.Open.Name(),
 		self.InsInfo["ExchangeID"],
 		self.OpenRef,
+		self.OpenSys,
 	)))
 }
 func (self *InsOrder)OpenOrder(open *Candle,_dir bool){
@@ -208,15 +213,17 @@ func (self *InsOrder)OpenOrder(open *Candle,_dir bool){
 		self.Stop  = self.Open.Bid
 		self.OpenP = self.Open.Ask
 	}
-	//Order++
+	Order++
 	config.Conf.DefUser().SendTr([]byte(
-		fmt.Sprintf("OrderInsert,%s,%s,0,%s,%.5f,%.5f",
+		fmt.Sprintf("OrderInsert,%s,%s,%012d,0,%s,%.5f,%.5f",
 		self.Open.Name(),
 		self.InsInfo["ExchangeID"],
+		Order,
 		dis,
 		self.OpenP,
 		self.Stop,
 	)))
+	self.OpenRef =fmt.Sprintf("%012d", Order);
 }
 
 func (self *InsOrder)CloseOrder(c *Candle){
@@ -234,12 +241,13 @@ func (self *InsOrder)CloseOrder(c *Candle){
 		//f = self.Open.GetLowerLimitPrice()
 		//f = self.Close.Ask
 	}
-	//Order++
+	Order++
 	config.Conf.DefUser().SendTr(
 		[]byte(
-			fmt.Sprintf("OrderInsert,%s,%s,3,%s,%.5f,0",
+			fmt.Sprintf("OrderInsert,%s,%s,%012d,3,%s,%.5f,0",
 			self.Open.Name(),
 			self.InsInfo["ExchangeID"],
+			Order,
 			dis,
 			f),
 		),

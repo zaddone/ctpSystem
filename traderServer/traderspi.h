@@ -81,6 +81,8 @@ private:
     int requestID;
     CThostFtdcReqUserLoginField userReq;
     map<string , int >mapstring;
+    //map<string , CThostFtdcOrderField>mapOrder;
+    //map<string , string >mapOrder;
     //map<string, CThostFtdcInstrumentField >mapInstrument;
     void run();
     void initMap();
@@ -116,12 +118,13 @@ private:
     void sendOrderAction(
             const char *ins,
             const char *ExchangeID,
-            const char *OrderRef
+            const char *OrderRef,
+            const char *OrderSys
             );
     void sendOrderInsert(
             const char *ins,
             const char *ExchangeID,
-            //const char *OrderRef,
+            const char *OrderRef,
             const char fsetFlag,
             const char dis,
             const double price,
@@ -134,6 +137,7 @@ private:
     const char * Addr;
     TThostFtdcFrontIDType frontID;
     TThostFtdcSessionIDType sessionID;
+
 
 };
 
