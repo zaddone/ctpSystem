@@ -300,15 +300,7 @@ func runRouter(c chan []byte,rm map[string]func([]byte)){
 	}
 }
 func orderWaitBack(db []byte){
-
 	dbs := strings.Split(string(db),"-")
-	//var dbs []string
-	//for _,d := range strings.Split(string(db)," "){
-	//	if len(d)==0 {
-	//		continue
-	//	}
-	//	dbs = append(dbs,d)
-	//}
 	ca := cache.Show(dbs[0])
 	if ca==nil {
 		return
@@ -322,19 +314,10 @@ func orderCancelBack(db []byte){
 	if ca==nil {
 		return
 	}
-	ca.Order.Update(2,false)
+	ca.Order.Update(2,dbs[1],false)
 }
 func tradeBack(db []byte){
-	dbs := strings.Split(string(db)," ")
-	//var dbs []string
-	//for _,d := range strings.Split(string(db)," "){
-	//	if len(d)==0 {
-	//		continue
-	//	}
-	//	dbs = append(dbs,d)
-	//}
-
-
+	dbs := strings.Split(string(db),"-")
 	ca := cache.Show(dbs[0])
 	if ca==nil {
 		return
@@ -344,17 +327,10 @@ func tradeBack(db []byte){
 		//return
 		panic(err)
 	}
-
 	if dbs[2]=="0"{
-		ca.Order.Update(2,c)
-		//fmt.Println(
-		//	"_open",
-		//	or.Open.Ask,
-		//	or.Open.Bid,
-		//	c,
-		//	or.Dis)
+		ca.Order.Update(2,dbs[1],c)
 	}else{
-		ca.Order.Update(4,c)
+		ca.Order.Update(4,dbs[1],c)
 	}
 
 }

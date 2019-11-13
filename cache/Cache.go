@@ -13,9 +13,7 @@ import(
 var (
 	Count [5][4]float64
 	OrderCount [6]float64
-	//KeyChan = make(chan *MsgKey,100)
-	//InsInfoMap sync.Map
-	//InsOrderMap sync.Map
+
 	Order int = 1
 	CacheMap sync.Map
 )
@@ -47,13 +45,16 @@ type InsOrder struct {
 
 	Stop float64
 
-
 	Close *Candle
 	ClosePrice float64
 	CloseRef string
 	//Order int
 
 	State int
+
+	par *InsOrder
+	children *InsOrder
+
 
 }
 func (self *InsOrder) SaveDB(p float64) error {
@@ -107,36 +108,45 @@ func (self *InsOrder) UpdateDB(p float64) error {
 
 func (self *InsOrder)Update(state int,v ...interface{}) {
 
-	log.Println(self.InsInfo["InstrumentID"],self.State,state,v)
+	log.Println(self.InsInfo["InstrumentID"],self.OpenRef,self.State,state,v)
 	switch state {
 	case 1:
 		if self.State!= 0 {
-			return
+			p := *self
+			p.par = self
+			self.children = &p
 		}
 		self.State = state
 		self.OpenPrice = 0
 		self.OpenOrder(v[1].(*Candle),v[0].(bool))
 		self.SaveDB(self.OpenP)
 	case 2:
+		if v[0] != self.OpenRef {
+			self.children.Update(state,v...)
+			return
+		}
 		if (self.State!=1) && (self.State!=2) {
 			return
 		}
 		self.State = state
-		switch val := v[0].(type){
+		switch val := v[1].(type){
 		case bool:
 			self.DeleteDB()
 			self.State = 0
+			if self.par != nil {
+				self.par.children = nil
+			}
 		case float64:
 			self.OpenPrice = val
 			self.UpdateDB(self.OpenPrice)
 		case string:
-			self.OpenRef = val
-			self.OpenSys = v[1].(string)
-			//if self.OpenRef != val {
-			//	fmt.Println("Is not same:",self.OpenRef,val)
-			//}
+			self.OpenSys = val
 		}
 	case 3:
+		if self.children != nil {
+			self.children.Update(state,v...)
+			return
+		}
 		if (self.State==0) {
 			return
 		}
@@ -149,21 +159,28 @@ func (self *InsOrder)Update(state int,v ...interface{}) {
 		self.UpdateDB(self.Close.Val())
 
 	case 4:
-
-		if self.State+1 != state{
-			self.State = 0
+		if self.CloseRef  != v[0].(string) {
+			if self.children == nil {
+				fmt.Println(self.CloseRef,v[0].(string))
+				panic(9)
+			}
+			self.children.Update(state,v...)
 			return
 		}
+		if self.State < 2 {
+			fmt.Println(self.State,state)
+			panic(8)
+		}
+
 		diff := self.Close.Val() - self.Open.Val()
-		self.ClosePrice = v[0].(float64)
+		self.ClosePrice = v[1].(float64)
 		self.UpdateDB(self.ClosePrice)
 
 		diff_:= self.ClosePrice - self.OpenPrice
 		ff := diff>0
 		ff_ := diff_>0
-		if ff_ == ff{
+		if ff_ == ff {
 			OrderCount[1]++
-
 		}else{
 			OrderCount[0]++
 		}
@@ -179,6 +196,9 @@ func (self *InsOrder)Update(state int,v ...interface{}) {
 		}
 		fmt.Println(OrderCount)
 		self.State = 0
+		if self.par != nil {
+			self.par.children = nil
+		}
 
 	}
 	return
@@ -202,28 +222,30 @@ func (self *InsOrder)OpenOrder(open *Candle,_dir bool){
 	self.Open = open
 	self.Dis = _dir
 	self.OpenPrice = 0
+	self.OpenRef = ""
+	self.OpenSys = ""
 	var dis string
 	//var stop float64
 	if self.Dis {
 		dis = "0"
-		self.Stop  = self.Open.Ask
+		//self.Stop  = self.Open.Ask
 		self.OpenP = self.Open.Bid
 	}else{
 		dis = "1"
-		self.Stop  = self.Open.Bid
+		//self.Stop  = self.Open.Bid
 		self.OpenP = self.Open.Ask
 	}
 	Order++
+	self.OpenRef =fmt.Sprintf("%012d", Order);
 	config.Conf.DefUser().SendTr([]byte(
-		fmt.Sprintf("OrderInsert,%s,%s,%012d,0,%s,%.5f,%.5f",
+		fmt.Sprintf("OrderInsert,%s,%s,%s,0,%s,%.5f,0",
 		self.Open.Name(),
 		self.InsInfo["ExchangeID"],
-		Order,
+		self.OpenRef,
 		dis,
 		self.OpenP,
-		self.Stop,
+		//self.Stop,
 	)))
-	self.OpenRef =fmt.Sprintf("%012d", Order);
 }
 
 func (self *InsOrder)CloseOrder(c *Candle){
@@ -242,12 +264,13 @@ func (self *InsOrder)CloseOrder(c *Candle){
 		//f = self.Close.Ask
 	}
 	Order++
+	self.CloseRef = fmt.Sprintf("%012d", Order)
 	config.Conf.DefUser().SendTr(
 		[]byte(
-			fmt.Sprintf("OrderInsert,%s,%s,%012d,3,%s,%.5f,0",
+			fmt.Sprintf("OrderInsert,%s,%s,%s,3,%s,%.5f,0",
 			self.Open.Name(),
 			self.InsInfo["ExchangeID"],
-			Order,
+			self.CloseRef,
 			dis,
 			f),
 		),
@@ -316,16 +339,7 @@ func StoreCache(info map[string]string){
 	c.L=NewLayer(c)
 	//fmt.Println(p)
 	//var err error
-
 	c.Order=InsOrder{InsInfo:info}
-	//c.Order.DB,err = bolt.Open(
-	//	filepath.Join(
-	//		config.Conf.GetTPath(),
-	//		ins,
-	//	),
-	//	0600,nil)
-	//if err != nil {
-	//	panic(err)
-	//}
 	return
+
 }

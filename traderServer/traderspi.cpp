@@ -941,13 +941,12 @@ void TraderSpi::reqUserLogin(){
 
 void TraderSpi::OnRtnTrade(CThostFtdcTradeField *pTrade) {
     cout<<"trade "\
-       << pTrade->InstrumentID << " " \
-       << pTrade->Price << " " \
-       << pTrade->OffsetFlag << " " \
+       << pTrade->InstrumentID << "-" \
+       << pTrade->Price << "-" \
+       << pTrade->OffsetFlag << "-" \
+       << pTrade->OrderRef << "-" \
        << pTrade->TradeDate << "T" \
-       << pTrade->TradeTime << " " \
-       << pTrade->OrderRef << " " \
-       << endl;
+       << pTrade->TradeTime << endl;
     //this->reqInvestorPosition(pTrade->InstrumentID);
 }
 void TraderSpi::OnRtnOrder(CThostFtdcOrderField *pOrder){

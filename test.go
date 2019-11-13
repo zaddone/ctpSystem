@@ -6,7 +6,17 @@ import(
 	//"bufio"
 	//"time"
 )
+type InsOrder struct {
+	State int
+	par *InsOrder
+}
+func (self *InsOrder)cop(){
+	self.par = &(*self)
+	self.par.State = self.State+1
+}
+
 func main(){
-	str := fmt.Sprintf("%012d",14)
-	fmt.Println(str,len(str))
+	O := &InsOrder{}
+	O.cop()
+	fmt.Println(O.State,O.par.State)
 }
