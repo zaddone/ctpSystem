@@ -116,7 +116,7 @@ func (self *Layer) checkTem() (isok bool) {
 
 
 	self.tem = nil
-	self.ca.Order.Update(3,c_)
+	self.ca.Order.SendCloseOrder(c_.(*Candle),self.ca)
 	return
 }
 
@@ -209,7 +209,8 @@ func (self *Layer) getTemplate(dis bool){
 	//	return
 	//}
 	if config.Conf.IsTrader{
-		self.ca.Order.Update(1,self.tem.Dis,self.tem.can)
+		//self.ca.Order.Update(1,self.tem.Dis,self.tem.can)
+		self.ca.AddOrder(self.tem.Dis)
 		//OpenInsOrder(self.tem.can,self.tem.Dis)
 	}
 
@@ -237,7 +238,13 @@ func (self *Layer) _baseAdd(e Element){
 func (self *Layer) baseAdd(e Element){
 	if e == nil {
 		//CloseInsOrder(self.getLast())
-		self.ca.Order.Update(3,self.getLast())
+		//self.ca.Order.Update(3,self.getLast())
+		c:= self.ca.GetLast().(*Candle)
+		self.ca.EachOrder(func(k string,o *InsOrder)bool{
+			o.SendCloseOrder(c,self.ca)
+			return true
+		})
+		//self.ca.Order.SendCloseOrder(self.getLast())
 		self.par = nil
 		self.cans = nil
 		return

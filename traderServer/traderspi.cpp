@@ -832,7 +832,7 @@ void TraderSpi::sendOrderInsert(
     strcpy(order.InstrumentID,ins);
     strcpy(order.UserID,this->userReq.UserID);
     strcpy(order.ExchangeID,ExchangeID);
-    //strcpy(order.OrderRef,OrderRef);
+    strcpy(order.OrderRef,OrderRef);
     order.ContingentCondition =THOST_FTDC_CC_Immediately;
     order.Direction = dis;
     order.CombOffsetFlag[0] = setFlag;

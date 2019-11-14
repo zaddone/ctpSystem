@@ -305,7 +305,8 @@ func orderWaitBack(db []byte){
 	if ca==nil {
 		return
 	}
-	ca.Order.Update(2,dbs[1],dbs[2])
+	ca.GetOrder(dbs[1]).Wait(dbs[2])
+	//ca.Order.Update(2,dbs[1],dbs[2])
 }
 func orderCancelBack(db []byte){
 
@@ -314,7 +315,8 @@ func orderCancelBack(db []byte){
 	if ca==nil {
 		return
 	}
-	ca.Order.Update(2,dbs[1],false)
+	ca.DelOrder(dbs[1])
+	//ca.Order.Update(2,dbs[1],false)
 }
 func tradeBack(db []byte){
 	dbs := strings.Split(string(db),"-")
@@ -328,9 +330,12 @@ func tradeBack(db []byte){
 		panic(err)
 	}
 	if dbs[2]=="0"{
-		ca.Order.Update(2,dbs[1],c)
+		ca.GetOrder(dbs[3]).SetOpenPrice(c)
+		//ca.Order.Update(2,dbs[3],c)
 	}else{
-		ca.Order.Update(4,dbs[1],c)
+		//ca.Order.Update(4,dbs[3],c)
+		ca.GetOrder(dbs[3]).EndOrder(c)
+		ca.DelOrder(dbs[3])
 	}
 
 }
