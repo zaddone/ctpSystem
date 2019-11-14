@@ -8,7 +8,7 @@ TrServer = "traderServer/build/traderServer"
 Weight = 4
 IsTrader = false
 DefaultUser = "150797"
-Example = ["AP001","AP003","AP005","AP007","AP010","AP911","AP912"]
+Example = []
 
 [User]
   [User.153985]

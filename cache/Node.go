@@ -22,6 +22,20 @@ type Node struct {
 	LastTime_ int64
 	Dur_ int64
 }
+func MergeElement(a,b Element) (c *Node) {
+
+	var eles []Element
+	a.Each(func(c_ Element)error{
+		eles = append(eles,c_)
+		return nil
+	})
+	b.Each(func(c_ Element)error{
+		eles = append(eles,c_)
+		return nil
+	})
+	return NewNode(eles)
+
+}
 
 
 func NewNode(eles []Element) (n *Node) {

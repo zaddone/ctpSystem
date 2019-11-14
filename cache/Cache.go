@@ -118,111 +118,6 @@ func (self *InsOrder) UpdateDB(p float64) error {
 	})
 }
 
-
-//func (self *InsOrder)Update(state int,v ...interface{}) {
-//
-//	log.Println(self.InsInfo["InstrumentID"],self.OpenRef,self.State,state,v)
-//	switch state {
-//	case 1:
-//		if self.State!= 0 {
-//			p := *self
-//			//p.par = self
-//			self.children = &p
-//			self.children.par=self
-//		}
-//		self.State = state
-//		self.OpenPrice = 0
-//		self.OpenOrder(v[1].(*Candle),v[0].(bool))
-//		self.SaveDB(self.OpenP)
-//	case 2:
-//		if v[0].(string) != self.OpenRef {
-//			fmt.Println(self.OpenRef,v[0].(string))
-//			if self.children == nil{
-//				panic(7)
-//			}
-//			self.children.Update(state,v...)
-//			return
-//		}
-//		if (self.State!=1) && (self.State!=2) {
-//			return
-//		}
-//		self.State = state
-//		switch val := v[1].(type){
-//		case bool:
-//			self.DeleteDB()
-//			self.State = 0
-//			if self.par != nil {
-//				self.par.children = nil
-//			}
-//		case float64:
-//			self.OpenPrice = val
-//			self.UpdateDB(self.OpenPrice)
-//		case string:
-//			self.OpenSys = val
-//		}
-//	case 3:
-//		if self.children != nil {
-//			self.children.Update(state,v...)
-//			return
-//		}
-//		if (self.State==0) {
-//			return
-//		}
-//		if self.OpenPrice == 0 {
-//			self.ActionCancel()
-//			return
-//		}
-//		self.State = state
-//		self.CloseOrder(v[0].(*Candle))
-//		self.UpdateDB(self.Close.Val())
-//
-//	case 4:
-//		if self.CloseRef  != v[0].(string) {
-//			fmt.Println(self.CloseRef,v[0].(string))
-//			if self.children == nil {
-//				//return
-//				panic(9)
-//			}
-//			self.children.Update(state,v...)
-//			return
-//		}
-//		if self.State < 2 {
-//			fmt.Println(self.State,state)
-//			panic(8)
-//		}
-//
-//		diff := self.Close.Val() - self.Open.Val()
-//		self.ClosePrice = v[1].(float64)
-//		self.UpdateDB(self.ClosePrice)
-//
-//		diff_:= self.ClosePrice - self.OpenPrice
-//		ff := diff>0
-//		ff_ := diff_>0
-//		if ff_ == ff {
-//			OrderCount[1]++
-//		}else{
-//			OrderCount[0]++
-//		}
-//		if self.Dis == ff {
-//			OrderCount[3]++
-//		}else{
-//			OrderCount[2]++
-//		}
-//		if self.Dis == ff_ {
-//			OrderCount[5]++
-//		}else{
-//			OrderCount[4]++
-//		}
-//		fmt.Println(OrderCount)
-//		//self.State = 0
-//		if self.par != nil {
-//			self.par.children = nil
-//		}
-//
-//	}
-//	return
-//
-//}
 func (self *InsOrder) SendCloseOrder(c *Candle,ca *Cache){
 	self.Close = c
 	if self.OpenPrice == 0 {
@@ -421,17 +316,13 @@ func StoreCache(info map[string]string){
 	}
 	CacheMap.Store(ins,c)
 
-	if config.Conf.IsTrader {
+	if len(config.Conf.Example)>0 {
 		isAdd := false
-		if len(config.Conf.Example)>0{
 		for _,e := range config.Conf.Example{
 			isAdd =  ins == e
 			if isAdd {
 				break
 			}
-		}
-		}else{
-			isAdd = true
 		}
 		if !isAdd {
 			return

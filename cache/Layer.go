@@ -116,7 +116,9 @@ func (self *Layer) checkTem() (isok bool) {
 
 
 	self.tem = nil
-	self.ca.Order.SendCloseOrder(c_.(*Candle),self.ca)
+	if config.Conf.IsTrader{
+		self.ca.Order.SendCloseOrder(c_.(*Candle),self.ca)
+	}
 	return
 }
 
@@ -303,13 +305,21 @@ func (self *Layer) Add(e Element){
 func (self *Layer) initAdd (c Element){
 
 	le := len(self.cans)
-	self.cans = append(self.cans,c)
-	if le < 3 {
-		return
-	}
-	var maxD,absMaxD float64
+
+	//self.cans = append(self.cans,c)
+	//if le < 3 {
+	//	return
+	//}
 	self.sum  += c.Max()-c.Min()
+	//last := self.cans[le-1]
+	if le >0 && (self.cans[le-1].Diff()>0) == (c.Diff()>0){
+		self.cans[le-1] = MergeElement(self.cans[le-1],c)
+		//le--
+	}else{
+		self.cans = append(self.cans,c)
+	}
 	//self.sum  += math.Abs(c.Diff())
+	var maxD,absMaxD float64
 	var splitID int
 	for i,_c := range self.cans[:le] {
 		//sum += math.Abs(_c.Diff())
@@ -341,11 +351,18 @@ func (self *Layer) add(c Element) bool {
 		return false
 	}
 	le := len(self.cans)
-	self.cans = append(self.cans,c)
-	var absMaxD, maxD float64
+	//self.cans = append(self.cans,c)
 	//self.sum  += math.Abs(c.Diff())
 	self.sum  += c.Max()-c.Min()
-	//sum  := math.Abs(c.Diff())
+	last := self.cans[le-1]
+	if le >0 && (last.Diff()>0) == (c.Diff()>0){
+		//le--
+		self.cans[le-1] = MergeElement(last,c)
+		//return false
+	}else{
+		self.cans = append(self.cans,c)
+	}
+	var absMaxD, maxD float64
 	var splitID int
 	for i,_c := range self.cans[:le] {
 		//sum += math.Abs(_c.Diff())

@@ -177,7 +177,9 @@ func runComm(
 }
 func (self *UserInfo) SendMd(db []byte) {
 	//fmt.Println("md",len(self.sendMd),string(db))
-	self.sendMd <- db
+	if self.sendMd != nil {
+		self.sendMd <- db
+	}
 	//select{
 	//case self.sendMd <- db:
 	//default:
@@ -185,8 +187,10 @@ func (self *UserInfo) SendMd(db []byte) {
 	//}
 }
 func (self *UserInfo) SendTr(db []byte) {
-	log.Println(string(db))
-	self.sendTr <- db
+	//log.Println(string(db))
+	if self.sendTr != nil {
+		self.sendTr <- db
+	}
 	//select{
 	//case self.sendTr <- db:
 	//default:
@@ -225,8 +229,12 @@ func (self *Config) GetDbPath() string {
 	return self.DbPath
 }
 
-func (self *Config)DefUser() *UserInfo {
-	return self.User[self.DefaultUser]
+func (self *Config)DefUser() (u *UserInfo) {
+	u = self.User[self.DefaultUser]
+	if u == nil || !self.IsTrader {
+		return &UserInfo{}
+	}
+	return
 }
 
 func (self *Config)Save(fileName string){
