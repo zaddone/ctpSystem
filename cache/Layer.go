@@ -310,12 +310,21 @@ func (self *Layer) initAdd (c Element){
 	//if le < 3 {
 	//	return
 	//}
-	self.sum  += c.Max()-c.Min()
-	//last := self.cans[le-1]
-	if le >0 && (self.cans[le-1].Diff()>0) == (c.Diff()>0){
-		self.cans[le-1] = MergeElement(self.cans[le-1],c)
+	if le >0 {
+		last := self.cans[le-1]
+		if (last.Diff()>0)== (c.Diff()>0){
+			c = MergeElement(last,c)
+			le--
+			self.cans[le] = c
+			self.sum =self.sum- (last.Max()-last.Min())+c.Max()-c.Min()
+			//self.sum  += c.Max()-c.Min()
+		}else{
+			self.sum  += c.Max()-c.Min()
+			self.cans = append(self.cans,c)
+		}
 		//le--
 	}else{
+		self.sum  += c.Max()-c.Min()
 		self.cans = append(self.cans,c)
 	}
 	//self.sum  += math.Abs(c.Diff())
@@ -353,15 +362,23 @@ func (self *Layer) add(c Element) bool {
 	le := len(self.cans)
 	//self.cans = append(self.cans,c)
 	//self.sum  += math.Abs(c.Diff())
-	self.sum  += c.Max()-c.Min()
-	last := self.cans[le-1]
-	if le >0 && (last.Diff()>0) == (c.Diff()>0){
-		//le--
-		self.cans[le-1] = MergeElement(last,c)
-		//return false
+
+	if le >0 {
+		last := self.cans[le-1]
+		if (last.Diff()>0)== (c.Diff()>0){
+			c = MergeElement(last,c)
+			le--
+			self.cans[le] = c
+			self.sum =self.sum- (last.Max()-last.Min())+c.Max()-c.Min()
+		}else{
+			self.sum  += c.Max()-c.Min()
+			self.cans = append(self.cans,c)
+		}
 	}else{
+		self.sum  += c.Max()-c.Min()
 		self.cans = append(self.cans,c)
 	}
+
 	var absMaxD, maxD float64
 	var splitID int
 	for i,_c := range self.cans[:le] {
