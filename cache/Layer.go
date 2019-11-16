@@ -352,8 +352,16 @@ func (self *Layer) initAdd (c Element){
 	}
 
 }
-func (self *Layer) GetAmplitude() float64 {
-	return self.sum/float64(len(self.cans))
+
+func (self *Layer) GetAmplitude(dis bool) float64 {
+	var sum,n float64
+	for _,c := range self.cans{
+		if (c.Diff()>0) == dis{
+			sum += math.Abs(c.Diff())
+			n++
+		}
+	}
+	return sum/n
 }
 
 func (self *Layer) add(c Element) bool {
@@ -404,7 +412,9 @@ func (self *Layer) add(c Element) bool {
 	if splitID == 0 &&
 	(self.tag == 1) &&
 	(self.par != nil) &&
-	(math.Abs(self.direction) > self.par.GetAmplitude()) {
+	(self.tem == nil) &&
+	//(len(self.ca.Orders) == 0) &&
+	(math.Abs(self.direction) > self.par.GetAmplitude(self.direction<0)) {
 		self.getTemplate(self.direction<0)
 	}
 	sumv := self.sum/float64(len(self.cans))

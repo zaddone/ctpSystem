@@ -178,13 +178,13 @@ func (self *InsOrder)OpenOrder(open *Candle,_dir bool){
 	if self.Dis {
 		dis = "0"
 		//self.Stop  = self.Open.Ask
-		//self.OpenP = self.Open.Bid
-		self.OpenP = self.Open.Ask
+		self.OpenP = self.Open.Bid
+		//self.OpenP = self.Open.Ask
 	}else{
 		dis = "1"
 		//self.Stop  = self.Open.Bid
-		//self.OpenP = self.Open.Ask
-		self.OpenP = self.Open.Bid
+		self.OpenP = self.Open.Ask
+		//self.OpenP = self.Open.Bid
 	}
 	Order++
 	self.OpenRef =fmt.Sprintf("%012d", Order);
