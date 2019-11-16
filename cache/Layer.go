@@ -144,6 +144,7 @@ func (self *Layer) readAll(h func(Element)error)error{
 	return nil
 
 }
+
 func (self *Layer) getNormalization(dis bool)(X,Y []float64){
 	self.tem = &Temple{Dis:dis}
 	return
@@ -352,6 +353,25 @@ func (self *Layer) initAdd (c Element){
 	}
 
 }
+func (self *Layer)CheckCansLong(dis bool) bool {
+
+	var sum1,n1 float64
+	var sum2,n2 float64
+	for _,c := range self.cans{
+		if (c.Diff()>0) == dis{
+			sum1 += math.Abs(c.Diff())
+			n1++
+		}else{
+			sum2 += math.Abs(c.Diff())
+			n2++
+		}
+	}
+	if n1==0 || n2==0 {
+		return false
+	}
+	return (sum1/n1) > (sum2/n2)
+
+}
 
 func (self *Layer) GetAmplitude(dis bool) float64 {
 	var sum,n float64
@@ -409,14 +429,16 @@ func (self *Layer) add(c Element) bool {
 		}
 	}
 
-	if splitID == 0 &&
+	if (splitID == 0) &&
 	(self.tag == 1) &&
 	(self.par != nil) &&
-	(self.tem == nil) &&
 	//(len(self.ca.Orders) == 0) &&
-	(math.Abs(self.direction) > self.par.GetAmplitude(self.direction<0)) {
+	self.par.CheckCansLong(self.direction<0) &&
+	(math.Abs(self.direction) > self.par.GetAmplitude(self.direction>0)) {
 		self.getTemplate(self.direction<0)
 	}
+
+
 	sumv := self.sum/float64(len(self.cans))
 
 	if splitID == 0 ||
@@ -467,6 +489,8 @@ func (self *Layer) add(c Element) bool {
 		//(e.Val() > e1.Val()) == (self.direction<0){
 		//}
 	//}
+
+
 
 	return true
 
