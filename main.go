@@ -91,25 +91,25 @@ func initHttpRouter(){
 			"user":u,
 		})
 	})
+	Router.GET("/show",func(c *gin.Context){
+		words := c.DefaultQuery("word","")
+		if words=="" {
+			c.JSON(http.StatusOK,gin.H{"msg":"Success","list":cache.ShowAll()})
+			return
+		}
+		ca := cache.Show(words)
+		if ca==nil {
+			c.JSON(http.StatusOK,gin.H{"msg":"Word is nil","word":words})
+			return
+		}
+		list,err := ca.GetOrderList()
+		if err != nil {
+			c.JSON(http.StatusOK,gin.H{"msg":err,"word":words})
+			return
+		}
+		c.JSON(http.StatusOK,gin.H{"msg":"Success","word":words,"list":list})
 
-	//Router.GET("/show",func(c *gin.Context){
-	//	words := c.DefaultQuery("word","")
-	//	if words == "" {
-	//		c.JSON(http.StatusOK,gin.H{"msg":"Word is nil","word":words})
-	//		return
-	//	}
-	//	can_ := cache.Show(words)
-	//	if can_ == nil {
-	//		c.JSON(http.StatusOK,gin.H{"msg":"Word is nil","word":words})
-	//		return
-	//	}
-	//	can := can_.(*cache.Cache)
-	//	c.JSON(
-	//		http.StatusOK,
-	//		gin.H{"upper":can.GetUpperLimitPrice(),
-	//		"lower":can.GetLowerLimitPrice(),
-	//	})
-	//})
+	})
 	Router.GET("/wsend",func(c *gin.Context){
 		words := strings.Join(strings.Split(c.DefaultQuery("word",""),"_")," ")
 		if len(words) == 0 {

@@ -8,6 +8,8 @@ import(
 	"github.com/zaddone/ctpSystem/config"
 	"github.com/boltdb/bolt"
 	"path/filepath"
+	"encoding/gob"
+	"bytes"
 	//"os"
 )
 var (
@@ -33,8 +35,8 @@ func AddCandle(c *Candle) {
 }
 type InsOrder struct {
 
-	InsInfo map[string]string
-	DB *bolt.DB
+	insInfo map[string]string
+	db *bolt.DB
 
 	Dis bool
 	Open *Candle
@@ -52,11 +54,26 @@ type InsOrder struct {
 
 	State int
 
-	par *InsOrder
-	children *InsOrder
+	//par *InsOrder
+	//children *InsOrder
+}
 
+func (self *InsOrder) LoadByte(data []byte) error {
+
+	return gob.NewDecoder(bytes.NewBuffer(data)).Decode(self)
 
 }
+func (self *InsOrder) ToByte() []byte {
+
+	var network bytes.Buffer
+	enc := gob.NewEncoder(&network)
+	err := enc.Encode(self)
+	if err != nil {
+		log.Fatal("encode:", err)
+	}
+	return network.Bytes()
+}
+
 func (self *InsOrder) SetOpenPrice(p float64){
 	self.OpenPrice = p
 }
@@ -69,12 +86,12 @@ func (self *InsOrder) Wait(OrderSys string){
 	}
 
 }
-func (self *InsOrder) SaveDB(p float64) error {
-	if self.DB == nil {
+func (self *InsOrder) SaveDB() error {
+	if self.db == nil {
 		return fmt.Errorf("db is nil")
 	}
-	return self.DB.Update(func(t *bolt.Tx)error{
-		b,err := t.CreateBucketIfNotExists([]byte(self.InsInfo["InstrumentID"]))
+	return self.db.Batch(func(t *bolt.Tx)error{
+		b,err := t.CreateBucketIfNotExists([]byte(self.insInfo["InstrumentID"]+"_order"))
 		if err != nil {
 			return err
 		}
@@ -83,40 +100,10 @@ func (self *InsOrder) SaveDB(p float64) error {
 		if v != nil {
 			return fmt.Errorf("repeat %s",v)
 		}
-		return b.Put(k,[]byte(fmt.Sprintf("%.2f",p)))
+		return b.Put(k,self.ToByte())
 	})
 }
 
-func (self *InsOrder) DeleteDB() error {
-	if self.DB == nil {
-		return fmt.Errorf("db is nil")
-	}
-	return self.DB.Update(func(t *bolt.Tx)error{
-		b  := t.Bucket([]byte(self.InsInfo["InstrumentID"]))
-		if b == nil {
-			return fmt.Errorf("bucker is nil")
-		}
-		return b.Delete([]byte(fmt.Sprintf("%d",self.Open.Time())))
-	})
-}
-
-func (self *InsOrder) UpdateDB(p float64) error {
-	if self.DB == nil {
-		return fmt.Errorf("db is nil")
-	}
-	return self.DB.Update(func(t *bolt.Tx)error{
-		b  := t.Bucket([]byte(self.InsInfo["InstrumentID"]))
-		if b == nil {
-			return fmt.Errorf("bucker is nil")
-		}
-		k := []byte(fmt.Sprintf("%d",self.Open.Time()))
-		v := b.Get(k)
-		if v == nil {
-			return fmt.Errorf("%s is Not Found",k)
-		}
-		return b.Put(k,append(v,[]byte(fmt.Sprintf(" %.2f",p))...))
-	})
-}
 
 func (self *InsOrder) SendCloseOrder(c *Candle,ca *Cache){
 	self.Close = c
@@ -151,6 +138,10 @@ func (self *InsOrder)EndOrder(p float64){
 		OrderCount[4]++
 	}
 	fmt.Println(OrderCount)
+	err := self.SaveDB()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (self *InsOrder)ActionCancel(){
@@ -160,7 +151,7 @@ func (self *InsOrder)ActionCancel(){
 	config.Conf.DefUser().SendTr([]byte(
 		fmt.Sprintf("OrderAction,%s,%s,%s,%s",
 		self.Open.Name(),
-		self.InsInfo["ExchangeID"],
+		self.insInfo["ExchangeID"],
 		self.OpenRef,
 		self.OpenSys,
 	)))
@@ -179,11 +170,13 @@ func (self *InsOrder)OpenOrder(open *Candle,_dir bool){
 		dis = "0"
 		//self.Stop  = self.Open.Ask
 		self.OpenP = self.Open.Bid
+
 		//self.OpenP = self.Open.Ask
 	}else{
 		dis = "1"
 		//self.Stop  = self.Open.Bid
 		self.OpenP = self.Open.Ask
+
 		//self.OpenP = self.Open.Bid
 	}
 	Order++
@@ -191,7 +184,7 @@ func (self *InsOrder)OpenOrder(open *Candle,_dir bool){
 	config.Conf.DefUser().SendTr([]byte(
 		fmt.Sprintf("OrderInsert,%s,%s,%s,0,%s,%.5f,0",
 		self.Open.Name(),
-		self.InsInfo["ExchangeID"],
+		self.insInfo["ExchangeID"],
 		self.OpenRef,
 		dis,
 		self.OpenP,
@@ -220,7 +213,7 @@ func (self *InsOrder)CloseOrder(c *Candle){
 		[]byte(
 			fmt.Sprintf("OrderInsert,%s,%s,%s,3,%s,%.5f,0",
 			self.Open.Name(),
-			self.InsInfo["ExchangeID"],
+			self.insInfo["ExchangeID"],
 			self.CloseRef,
 			dis,
 			f),
@@ -240,9 +233,10 @@ type Cache struct {
 }
 func (self *Cache) AddOrder(dis bool){
 	self.Order = &InsOrder{
-		InsInfo:self.Info,
+		insInfo:self.Info,
 	}
 	self.Order.OpenOrder(self.GetLast().(*Candle),dis)
+	self.Order.db = self.DB
 	self.Lock()
 	self.Orders[self.Order.OpenRef] = self.Order
 	self.Unlock()
@@ -280,9 +274,31 @@ func (self *Cache) EachOrder(h func(string,*InsOrder)bool){
 func (self *Cache)GetLast() interface{} {
 	return self.L.getLast()
 }
+func (self *Cache)GetOrderList() (ios []*InsOrder,err error) {
+	err = self.DB.View(func(t *bolt.Tx)error{
+		b := t.Bucket([]byte(self.Info["InstrumentID"]+"_order"))
+		if b == nil {
+			return fmt.Errorf("b == nil")
+		}
+		return b.ForEach(func(k,v []byte)error{
+			ino := &InsOrder{}
+			ios = append(ios,ino)
+			return ino.LoadByte(v)
+		})
+
+	})
+	return
+}
 //func (self *Cache)Open(_c interface{},dir bool){
 //	c:= _c.(*Candle)
 //}
+func ShowAll() (ca []map[string]string) {
+	CacheMap.Range(func(k,v interface{})bool{
+		ca = append(ca,v.(*Cache).Info)
+		return true
+	})
+	return
+}
 func Show(ins string) *Cache {
 
 	c_,ok := CacheMap.Load(ins)
