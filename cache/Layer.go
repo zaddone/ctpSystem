@@ -429,26 +429,29 @@ func (self *Layer) add(c Element) bool {
 		}
 	}
 
-	if (splitID > 0) &&
-	 (self.tag == 1) &&
-	(self.par != nil) &&
-	(self.tem == nil) &&
-	//(len(self.ca.Orders) == 0) &&
-	self.par.CheckCansLong(self.direction>0) &&
-	(math.Abs(self.direction) > self.par.GetAmplitude(self.direction>0)) {
-		self.getTemplate(self.direction<0)
+	//if (splitID > 0) &&
+	//if (self.tag == 1) &&
+	//(self.par != nil) &&
+	//(self.tem == nil) &&
+	////(len(self.ca.Orders) == 0) &&
+	//self.par.CheckCansLong(self.direction>0) &&
+	//(math.Abs(self.direction) > self.par.GetAmplitude(self.direction>0)) {
+	//	self.getTemplate(self.direction<0)
+	//}
+
+	if splitID == 0 {
+		return false
 	}
-
-
 	sumv := self.sum/float64(len(self.cans))
-
-	if splitID == 0 ||
-	sumv > absMaxD {
-		//if self.tem != nil {
-		//	self.checkTemStop()
-		//}
-
-
+	if sumv > absMaxD {
+		if (self.tag == 1) &&
+		(self.par != nil) &&
+		(self.tem == nil) &&
+		//(len(self.ca.Orders) == 0) &&
+		self.par.CheckCansLong(self.direction>0) &&
+		(math.Abs(self.direction) > self.par.GetAmplitude(self.direction>0)) {
+			self.getTemplate(self.direction<0)
+		}
 		return false
 	}
 
