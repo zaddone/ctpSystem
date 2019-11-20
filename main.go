@@ -305,7 +305,10 @@ func orderWaitBack(db []byte){
 	if ca==nil {
 		return
 	}
-	ca.GetOrder(dbs[1]).Wait(dbs[2])
+	o := ca.GetOrder(dbs[1])
+	if o != nil {
+		o.Wait(dbs[2])
+	}
 	//ca.Order.Update(2,dbs[1],dbs[2])
 }
 func orderCancelBack(db []byte){
