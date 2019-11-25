@@ -63,6 +63,7 @@ func (self *InsOrder) LoadByte(data []byte) error {
 	return gob.NewDecoder(bytes.NewBuffer(data)).Decode(self)
 
 }
+
 func (self *InsOrder) ToByte() []byte {
 
 	var network bytes.Buffer
@@ -77,6 +78,7 @@ func (self *InsOrder) ToByte() []byte {
 func (self *InsOrder) SetOpenPrice(p float64){
 	self.OpenPrice = p
 }
+
 func (self *InsOrder) Wait(OrderSys string){
 
 	if self.OpenSys == "" {
@@ -86,6 +88,7 @@ func (self *InsOrder) Wait(OrderSys string){
 	}
 
 }
+
 func (self *InsOrder) SaveDB() error {
 	if self.db == nil {
 		return fmt.Errorf("db is nil")
@@ -182,13 +185,13 @@ func (self *InsOrder)OpenOrder(open *Candle,_dir bool){
 	Order++
 	self.OpenRef =fmt.Sprintf("%012d", Order);
 	config.Conf.DefUser().SendTr([]byte(
-		fmt.Sprintf("OrderInsert,%s,%s,%s,0,%s,%.5f,0",
+		fmt.Sprintf("OrderInsert,%s,%s,%s,0,%s,%.5f,%.5f",
 		self.Open.Name(),
 		self.insInfo["ExchangeID"],
 		self.OpenRef,
 		dis,
 		self.OpenP,
-		//self.Stop,
+		self.Stop,
 	)))
 }
 
@@ -231,9 +234,16 @@ type Cache struct {
 	//IsAdd bool
 	//DBT *bolt.DB
 }
-func (self *Cache) AddOrder(dis bool){
+func (self *Cache) AddOrder(dis bool,stop Element){
 	self.Order = &InsOrder{
 		insInfo:self.Info,
+		Stop:func()float64{
+			if dis{
+				return stop.Min()
+			}else{
+				return stop.Max()
+			}
+		}(),
 	}
 	self.Order.OpenOrder(self.GetLast().(*Candle),dis)
 	self.Order.db = self.DB
