@@ -55,23 +55,29 @@ func (self *Temple)Check(l *Layer){
 		//	fmt.Println(self.Stats,"sl",Count[0])
 		//	return
 		//}
+		if l.splitID != 0 {
+			return
+		}
 		e := l.par.cans[len(l.par.cans)-1]
 		e_:= NewNode(l.cans)
 		//dis := e_.Val() > e.Val()
-		if self.Dis != (e_.Val() > e.Val()) {
+		//fmt.Println(self.Dis,e.Diff(),e_.Diff(),e.Val()<e_.Val())
+		if math.Abs(e_.Diff()) > math.Abs(e.Diff()) {
 			l.checkTem()
 		}
 		return
 	}else{
-		//if l.splitID == 0 {
-		//	return
-		//}
-		//e := NewNode(l.cans[:(l.splitID+1)])
-		//e_ := NewNode(l.cans[l.splitID:])
-		////dis := e_.Val() > e.Val()
+		if l.splitID == 0 {
+			return
+		}
+		e := NewNode(l.cans[:(l.splitID+1)])
+		e_ := NewNode(l.cans[l.splitID:])
+		//dis := e_.Val() > e.Val()
+		if  math.Abs(e_.Diff()) >math.Abs(e.Diff()) {
 		//if (e_.Val() > e.Val()) != (self.Dis) {
-		//	l.checkTem()
-		//}
+			//fmt.Println(self.Stats,self.Dis,e_.Diff(),e.Diff())
+			l.checkTem()
+		}
 		return
 	}
 
@@ -177,8 +183,8 @@ func (self *Layer) checkTem() (isok bool) {
 	//}
 
 
-	//self.tem = nil
-	self.tem.Stats = -1
+	self.tem = nil
+	//self.tem.Stats = -1
 	if config.Conf.IsTrader{
 		self.ca.Order.SendCloseOrder(c_.(*Candle),self.ca)
 	}
@@ -453,11 +459,14 @@ func (self *Layer)CheckPL(e Element) {
 			self.par.CheckPL(e)
 		}
 	}else{
-		if (self.tem.Stats < 0) {
-			return
-		}
+		//if (self.tem.Stats < 0) {
+		//	return
+		//}
 		if (e.Val()>self.tem.stop.Val()) == self.tem.Dis {
+			//fmt.Println(e.Val(),self.tem.stop.Val(),self.tem.Dis)
+			//fmt.Println(Count[0])
 			self.checkTem()
+			//fmt.Println(Count[0])
 			return
 		}
 	}
@@ -549,7 +558,8 @@ func (self *Layer) add(c Element) bool {
 	//(self.par.direction >0 ) == (self.direction>0) &&
 	(self.tem == nil) &&
 	//self.CheckSplit() &&
-	self.par.CheckCansLong(self.direction>0) &&
+	//self.par.CheckCansLong(self.direction<0) &&
+	math.Abs(self.par.cans[len(self.par.cans)-1].Diff())>math.Abs(self.direction)&&
 	(math.Abs(self.direction) > self.par.GetAmplitude(self.direction>0)) {
 		self.getTemplate(self.direction<0,self.cans[0])
 	}
@@ -593,13 +603,12 @@ func (self *Layer) add(c Element) bool {
 		//isU:= true
 		if self.tem != nil  {
 			//isU = self.checkTem()
-			if self.tem.Stats >=0{
+			//if self.tem.Stats >=0{
 				self.checkTem()
-				self.tem = nil
 				//self.tem.SetStats()
-			}else{
-				self.tem = nil
-			}
+			//}else{
+			//	self.tem = nil
+			//}
 		}
 		//if isU{
 		//if self.par.direction!=0 &&

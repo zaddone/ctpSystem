@@ -31,7 +31,10 @@ func main(){
 		if b== nil {
 			return nil
 		}
-		for i,_ := range cache.Count{
+		for i,c := range cache.Count[:4]{
+			for j,_c := range c {
+				cache.Count[4][j]+=_c
+			}
 			cache.Count[i] = [4]float64{0,0,0,0}
 		}
 		cache.StoreCache(map[string]string{"InstrumentID":string(name)})
@@ -54,7 +57,7 @@ func main(){
 			return err
 		}
 		var c0,c1,c2,c3 float64
-		for _,c := range cache.Count{
+		for _,c := range cache.Count[:4]{
 			c0+=c[0]
 			c1+=c[1]
 			c2+=c[2]
@@ -64,8 +67,9 @@ func main(){
 			//	fmt.Println(string(name),i,c,c[1]/c[2])
 			//}
 		}
+		c_ := cache.Count[4]
 		if c1+c2 >0 {
-			fmt.Println(string(name),c0,c1,c2,c3,c0/c1,c2/c3)
+			fmt.Println(string(name),c0,c1,c2,c3,c_[0]/c_[1],c_[2]/c_[3])
 		}
 		return nil
 	})

@@ -239,9 +239,9 @@ func (self *Cache) AddOrder(dis bool,stop Element){
 		insInfo:self.Info,
 		Stop:func()float64{
 			if dis{
-				return stop.Min()
-			}else{
 				return stop.Max()
+			}else{
+				return stop.Min()
 			}
 		}(),
 	}
