@@ -23,17 +23,17 @@ type Temple struct{
 }
 func (self *Temple)Check(l *Layer){
 
-	if self.Stats<0{
-		return
-	}
-	la := l.cans[len(l.cans)-1]
-	if (la.Val()>self.stop.Val()) == self.Dis {
-		//fmt.Println(Count[0])
-		l.checkTem()
-		//fmt.Println(self.Stats,"sl",Count[0])
-		//fmt.Println(Count[0])
-		return
-	}
+	//if self.Stats<0{
+	//	return
+	//}
+	//la := l.cans[len(l.cans)-1]
+	//if (la.Val()>self.stop.Val()) == self.Dis {
+	//	//fmt.Println(Count[0])
+	//	l.checkTem()
+	//	//fmt.Println(self.Stats,"sl",Count[0])
+	//	//fmt.Println(Count[0])
+	//	return
+	//}
 	if self.Stats < 1 {
 		//if l.splitID == 0 {
 		//	return
@@ -63,15 +63,15 @@ func (self *Temple)Check(l *Layer){
 		}
 		return
 	}else{
-		if l.splitID == 0 {
-			return
-		}
-		e := NewNode(l.cans[:(l.splitID+1)])
-		e_ := NewNode(l.cans[l.splitID:])
-		//dis := e_.Val() > e.Val()
-		if (e_.Val() > e.Val()) != (self.Dis) {
-			l.checkTem()
-		}
+		//if l.splitID == 0 {
+		//	return
+		//}
+		//e := NewNode(l.cans[:(l.splitID+1)])
+		//e_ := NewNode(l.cans[l.splitID:])
+		////dis := e_.Val() > e.Val()
+		//if (e_.Val() > e.Val()) != (self.Dis) {
+		//	l.checkTem()
+		//}
 		return
 	}
 
@@ -342,7 +342,9 @@ func (self *Layer) baseAdd(e Element){
 		return
 	}
 
-	//self.CheckPL(e)
+	if !config.Conf.IsTrader{
+		self.CheckPL(e)
+	}
 	le := len(self.cans)
 	self.cans = append(self.cans,e)
 	if le == 0 {
@@ -593,9 +595,11 @@ func (self *Layer) add(c Element) bool {
 			//isU = self.checkTem()
 			if self.tem.Stats >=0{
 				self.checkTem()
+				self.tem = nil
 				//self.tem.SetStats()
+			}else{
+				self.tem = nil
 			}
-			self.tem = nil
 		}
 		//if isU{
 		//if self.par.direction!=0 &&
