@@ -553,7 +553,7 @@ func (self *Layer) add(c Element) bool {
 	//if (self.splitID != 0) &&
 	if (self.tag == 1) &&
 	(self.par != nil) &&
-	(self.par.direction !=0 ) &&
+	//(self.par.direction !=0 ) &&
 	//(self.par.splitID != 0 ) &&
 	//(self.par.direction >0 ) == (self.direction>0) &&
 	(self.tem == nil) &&
@@ -592,7 +592,7 @@ func (self *Layer) add(c Element) bool {
 	//	e1 = self.par.cans[len(self.par.cans)-1]
 	}
 	e := NewNode(self.cans[:self.splitID+1])
-	self.par.add(e)
+	self.par.initAdd(e)
 	self.cans = self.cans[self.splitID:]
 	self.sum = 0
 	for _,_c := range self.cans{
