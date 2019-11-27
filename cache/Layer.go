@@ -553,7 +553,7 @@ func (self *Layer) add(c Element) bool {
 	//if (self.splitID != 0) &&
 	if (self.tag == 1) &&
 	(self.par != nil) &&
-	//(self.par.direction !=0 ) &&
+	(self.par.direction !=0 ) &&
 	//(self.par.splitID != 0 ) &&
 	//(self.par.direction >0 ) == (self.direction>0) &&
 	(self.tem == nil) &&
