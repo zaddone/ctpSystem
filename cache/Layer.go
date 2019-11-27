@@ -554,19 +554,19 @@ func (self *Layer) add(c Element) bool {
 	if (self.tag == 1) &&
 	(self.par != nil) &&
 	(self.par.direction !=0 ) &&
-	//(self.par.splitID != 0 ) &&
-	//(self.par.direction >0 ) == (self.direction>0) &&
 	(self.tem == nil) &&
 	//self.CheckSplit() &&
 	//self.par.CheckCansLong(self.direction<0) &&
+	(self.par.direction>0) == (self.direction>0) &&
+	//(self.par.splitID==0) &&
 	math.Abs(self.par.cans[len(self.par.cans)-1].Diff())>math.Abs(self.direction)&&
 	(math.Abs(self.direction) > self.par.GetAmplitude(self.direction>0)) {
 		self.getTemplate(self.direction<0,self.cans[0])
 	}
 
-	if self.tem != nil {
-		self.tem.Check(self)
-	}
+	//if self.tem != nil {
+	//	self.tem.Check(self)
+	//}
 
 	if self.splitID == 0 {
 		return false
