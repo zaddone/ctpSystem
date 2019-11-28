@@ -2,7 +2,7 @@ package cache
 import(
 	"fmt"
 	"log"
-	"strings"
+	//"strings"
 	//"time"
 	"sync"
 	"github.com/zaddone/ctpSystem/config"
@@ -258,8 +258,8 @@ func (self *Cache) AddOrder(dis bool,stop Element){
 func (self *Cache)DelOrder(orderRef string){
 	self.Lock()
 	for i,o := range self.Orders {
-		if strings.EqualFold(o.OpenRef,orderRef) ||
-		strings.EqualFold(o.CloseRef,orderRef){
+		if (o.OpenRef == orderRef) ||
+		(o.CloseRef == orderRef){
 			self.Orders = append(self.Orders[:i],self.Orders[i+1:]...)
 			break
 		}
@@ -272,8 +272,8 @@ func (self *Cache)DelOrder(orderRef string){
 func (self *Cache)GetOrder(orderRef string)(o *InsOrder) {
 	self.Lock()
 	for _,_o := range self.Orders {
-		if strings.EqualFold(_o.OpenRef,orderRef) ||
-		strings.EqualFold(_o.CloseRef,orderRef){
+		if (_o.OpenRef == orderRef) ||
+		(_o.CloseRef == orderRef){
 			o = _o
 			break
 		}
