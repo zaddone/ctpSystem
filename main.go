@@ -337,7 +337,11 @@ func tradeBack(db []byte){
 		//ca.Order.Update(2,dbs[3],c)
 	}else{
 		//ca.Order.Update(4,dbs[3],c)
-		ca.GetOrder(dbs[3]).EndOrder(c)
+		o := ca.GetOrder(dbs[3])
+		if o == nil {
+			return
+		}
+		o.EndOrder(ca,c)
 		ca.DelOrder(dbs[3])
 	}
 

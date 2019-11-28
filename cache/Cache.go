@@ -2,7 +2,7 @@ package cache
 import(
 	"fmt"
 	"log"
-	//"strings"
+	"strings"
 	//"time"
 	"sync"
 	"github.com/zaddone/ctpSystem/config"
@@ -115,11 +115,15 @@ func (self *InsOrder) SendCloseOrder(c *Candle,ca *Cache){
 	}else{
 		self.CloseOrder(c)
 		ca.DelOrder(self.OpenRef)
-		ca.LoadOrder(self.CloseRef,self)
+		//ca.LoadOrder(self.CloseRef,self)
 	}
 }
-func (self *InsOrder)EndOrder(p float64){
+func (self *InsOrder)EndOrder(ca *Cache,p float64){
 
+	if self.Close == nil {
+		self.Close = ca.GetLast().(*Candle)
+		//self.Close = self.db
+	}
 	diff := self.Close.Val() - self.Open.Val()
 	self.ClosePrice = p
 	diff_ := self.ClosePrice - self.OpenPrice
@@ -228,7 +232,7 @@ type Cache struct {
 	L *Layer
 	Info map[string]string
 	Order *InsOrder
-	Orders map[string]*InsOrder
+	Orders []*InsOrder
 	DB *bolt.DB
 	sync.Mutex
 	//IsAdd bool
@@ -248,35 +252,53 @@ func (self *Cache) AddOrder(dis bool,stop Element){
 	self.Order.OpenOrder(self.GetLast().(*Candle),dis)
 	self.Order.db = self.DB
 	self.Lock()
-	self.Orders[self.Order.OpenRef] = self.Order
+	self.Orders = append(self.Orders,self.Order)
 	self.Unlock()
 }
 func (self *Cache)DelOrder(orderRef string){
 	self.Lock()
-	delete(self.Orders,orderRef)
+	for i,o := range self.Orders {
+		if strings.EqualFold(o.OpenRef,orderRef) ||
+		strings.EqualFold(o.CloseRef,orderRef){
+			self.Orders = append(self.Orders[:i],self.Orders[i+1:]...)
+			break
+		}
+
+	}
+	//delete(self.Orders,orderRef)
 	self.Unlock()
 	log.Println("map orders len:",len(self.Orders))
 }
 func (self *Cache)GetOrder(orderRef string)(o *InsOrder) {
 	self.Lock()
-	o = self.Orders[orderRef]
-	self.Unlock()
+	for _,_o := range self.Orders {
+		if strings.EqualFold(_o.OpenRef,orderRef) ||
+		strings.EqualFold(_o.CloseRef,orderRef){
+			o = _o
+			break
+		}
+	}
+	//o = self.Orders[orderRef]
 	if o == nil{
 		fmt.Println(orderRef)
-		return
-		panic("map Order is nil")
+		if len(self.Orders)>0 {
+			o = self.Orders[0]
+		}
+		//reture
+		//panic("map Order is nil")
 	}
+	self.Unlock()
 	return
 }
-func (self *Cache)LoadOrder(k string,o *InsOrder){
+//func (self *Cache)LoadOrder(k string,o *InsOrder){
+//	self.Lock()
+//	self.Orders  = append([k] = o
+//	self.Unlock()
+//}
+func (self *Cache) EachOrder(h func(*InsOrder)bool){
 	self.Lock()
-	self.Orders[k] = o
-	self.Unlock()
-}
-func (self *Cache) EachOrder(h func(string,*InsOrder)bool){
-	self.Lock()
-	for k,v := range self.Orders{
-		if !h(k,v){
+	for _,v := range self.Orders{
+		if !h(v){
 			break
 		}
 	}
@@ -341,7 +363,7 @@ func StoreCache(info map[string]string){
 		DB:DB,
 		//Order:InsOrder{InsInfo:info},
 		Info:info,
-		Orders:map[string]*InsOrder{},
+		//Orders:map[string]*InsOrder{},
 	}
 	CacheMap.Store(ins,c)
 

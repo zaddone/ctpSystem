@@ -338,7 +338,7 @@ func (self *Layer) baseAdd(e Element){
 		//CloseInsOrder(self.getLast())
 		//self.ca.Order.Update(3,self.getLast())
 		c:= self.ca.GetLast().(*Candle)
-		self.ca.EachOrder(func(k string,o *InsOrder)bool{
+		self.ca.EachOrder(func(o *InsOrder)bool{
 			o.SendCloseOrder(c,self.ca)
 			return true
 		})
