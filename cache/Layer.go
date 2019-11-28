@@ -178,7 +178,7 @@ func (self *Layer) checkTem() (isok bool) {
 				//Count[t][0] -= absDis
 			}
 			//Count[t][self.tem.Stats]++
-			//fmt.Println(Count[t],c_.Time() - self.tem.can.Time())
+			fmt.Println(Count[t],c_.Time() - self.tem.can.Time())
 		//}
 	//}
 
