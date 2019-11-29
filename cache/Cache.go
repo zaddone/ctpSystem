@@ -114,7 +114,7 @@ func (self *InsOrder) SendCloseOrder(c *Candle,ca *Cache){
 		self.ActionCancel()
 	}else{
 		self.CloseOrder(c)
-		ca.DelOrder(self.OpenRef)
+		//ca.DelOrder(self.OpenRef)
 		//ca.LoadOrder(self.CloseRef,self)
 	}
 }
@@ -149,6 +149,7 @@ func (self *InsOrder)EndOrder(ca *Cache,p float64){
 	if err != nil {
 		panic(err)
 	}
+	ca.Order = nil
 }
 
 func (self *InsOrder)ActionCancel(){
@@ -232,13 +233,16 @@ type Cache struct {
 	L *Layer
 	Info map[string]string
 	Order *InsOrder
-	Orders []*InsOrder
+	//Orders []*InsOrder
 	DB *bolt.DB
-	sync.Mutex
+	//sync.Mutex
 	//IsAdd bool
 	//DBT *bolt.DB
 }
 func (self *Cache) AddOrder(dis bool,stop Element){
+	if self.Order != nil {
+		return
+	}
 	self.Order = &InsOrder{
 		insInfo:self.Info,
 		Stop:func()float64{
@@ -251,59 +255,61 @@ func (self *Cache) AddOrder(dis bool,stop Element){
 	}
 	self.Order.OpenOrder(self.GetLast().(*Candle),dis)
 	self.Order.db = self.DB
-	self.Lock()
-	self.Orders = append(self.Orders,self.Order)
-	self.Unlock()
+	//self.Lock()
+	//self.Orders = append(self.Orders,self.Order)
+	//self.Unlock()
 }
-func (self *Cache)DelOrder(orderRef string){
-	self.Lock()
-	for i,o := range self.Orders {
-		if (o.OpenRef == orderRef) ||
-		(o.CloseRef == orderRef){
-			self.Orders = append(self.Orders[:i],self.Orders[i+1:]...)
-			break
-		}
-
-	}
-	//delete(self.Orders,orderRef)
-	self.Unlock()
-	log.Println("map orders len:",len(self.Orders))
-}
+//func (self *Cache)DelOrder(orderRef string){
+//	self.Order = nil
+//	//self.Lock()
+//	//for i,o := range self.Orders {
+//	//	if (o.OpenRef == orderRef) ||
+//	//	(o.CloseRef == orderRef){
+//	//		self.Orders = append(self.Orders[:i],self.Orders[i+1:]...)
+//	//		break
+//	//	}
+//
+//	//}
+//	////delete(self.Orders,orderRef)
+//	//self.Unlock()
+//	//log.Println("map orders len:",len(self.Orders))
+//}
 func (self *Cache)GetOrder(orderRef string)(o *InsOrder) {
-	self.Lock()
-	for _,_o := range self.Orders {
-		if (_o.OpenRef == orderRef) ||
-		(_o.CloseRef == orderRef){
-			o = _o
-			break
-		}
-	}
-	//o = self.Orders[orderRef]
-	if o == nil{
-		fmt.Println(orderRef)
-		if len(self.Orders)>0 {
-			o = self.Orders[0]
-		}
-		//reture
-		//panic("map Order is nil")
-	}
-	self.Unlock()
-	return
+	return self.Order
+	//self.Lock()
+	//for _,_o := range self.Orders {
+	//	if (_o.OpenRef == orderRef) ||
+	//	(_o.CloseRef == orderRef){
+	//		o = _o
+	//		break
+	//	}
+	//}
+	////o = self.Orders[orderRef]
+	//if o == nil{
+	//	fmt.Println(orderRef)
+	//	if len(self.Orders)>0 {
+	//		o = self.Orders[0]
+	//	}
+	//	//reture
+	//	//panic("map Order is nil")
+	//}
+	//self.Unlock()
+	//return
 }
 //func (self *Cache)LoadOrder(k string,o *InsOrder){
 //	self.Lock()
 //	self.Orders  = append([k] = o
 //	self.Unlock()
 //}
-func (self *Cache) EachOrder(h func(*InsOrder)bool){
-	self.Lock()
-	for _,v := range self.Orders{
-		if !h(v){
-			break
-		}
-	}
-	self.Unlock()
-}
+//func (self *Cache) EachOrder(h func(*InsOrder)bool){
+//	self.Lock()
+//	for _,v := range self.Orders{
+//		if !h(v){
+//			break
+//		}
+//	}
+//	self.Unlock()
+//}
 func (self *Cache)GetLast() interface{} {
 	return self.L.getLast()
 }

@@ -9,7 +9,7 @@ import(
 	"encoding/binary"
 	"encoding/gob"
 	"bytes"
-	"time"
+	//"time"
 	//"sync"
 )
 type Temple struct{
@@ -20,6 +20,10 @@ type Temple struct{
 	Wei []float64
 	Stats int
 	Dis bool
+}
+func (self *Temple)Check1(e,e_ Element) bool {
+	return (e.Val()>e_.Val()) != self.Dis// && (e.Diff()>0)== self.Dis
+
 }
 func (self *Temple)Check(l *Layer){
 
@@ -178,16 +182,18 @@ func (self *Layer) checkTem() (isok bool) {
 				//Count[t][0] -= absDis
 			}
 			//Count[t][self.tem.Stats]++
-			fmt.Println(Count[t],c_.Time() - self.tem.can.Time())
+			//fmt.Println(self.tem.Stats,Count[t],c_.Time() - self.tem.can.Time())
 		//}
 	//}
 
 
 	self.tem = nil
 	//self.tem.Stats = -1
-	if config.Conf.IsTrader{
+	//if config.Conf.IsTrader{
+	if self.ca.Order != nil {
 		self.ca.Order.SendCloseOrder(c_.(*Candle),self.ca)
 	}
+	//}
 	return
 }
 
@@ -325,32 +331,38 @@ func (self *Layer) runChan(){
 
 }
 
-func (self *Layer) _baseAdd(e Element){
-	if e== nil {
-		self.par = nil
-		self.cans = nil
-		return
-	}
-	self.add(e)
-}
+//func (self *Layer) _baseAdd(e Element){
+//	if e== nil {
+//		self.par = nil
+//		self.cans = nil
+//		return
+//	}
+//	self.add(e)
+//}
 func (self *Layer) baseAdd(e Element){
 	if e == nil {
+		//if self.par != nil &&  self.par.tem != nil{
+		//	self.par.checkTem()
+		//}
 		//CloseInsOrder(self.getLast())
 		//self.ca.Order.Update(3,self.getLast())
-		c:= self.ca.GetLast().(*Candle)
-		self.ca.EachOrder(func(o *InsOrder)bool{
-			o.SendCloseOrder(c,self.ca)
-			return true
-		})
+		//c:= self.ca.GetLast().(*Candle)
+		//if self.ca.Order != nil {
+		//	self.ca.Order.SendCloseOrder(c,self.ca)
+		//}
+		//self.ca.EachOrder(func(o *InsOrder)bool{
+		//	o.SendCloseOrder(c,self.ca)
+		//	return true
+		//})
 		//self.ca.Order.SendCloseOrder(self.getLast())
 		self.par = nil
 		self.cans = nil
 		return
 	}
 
-	if !config.Conf.IsTrader{
+	//if !config.Conf.IsTrader{
 		self.CheckPL(e)
-	}
+	//}
 	le := len(self.cans)
 	self.cans = append(self.cans,e)
 	if le == 0 {
@@ -392,9 +404,12 @@ func (self *Layer) Add(e Element){
 		//begin := time.Unix(self.lastEl.LastTime())
 
 		dl := e.LastTime() -  self.lastEl.LastTime()
-		if dl <0 || (time.Unix(e.LastTime(),0).Day() != time.Unix(self.lastEl.LastTime(),0).Day()) {
+		if dl <0 || dl>10 {
 			//fmt.Println("timeOut",dl,self.lastEl.Val(),e.Val())
-			self.canChan<-nil
+			if self.par == nil || self.par.tem == nil {
+			//if self.ca.Order == nil {
+				self.canChan<-nil
+			}
 		}
 	}
 
@@ -454,6 +469,7 @@ func (self *Layer) initAdd (c Element){
 
 }
 func (self *Layer)CheckPL(e Element) {
+	//return
 	if self.tem == nil {
 		if self.par != nil {
 			self.par.CheckPL(e)
@@ -550,7 +566,7 @@ func (self *Layer) add(c Element) bool {
 		}
 	}
 
-	//if (self.splitID != 0) &&
+	//if (self.splitID == 0) &&
 	if (self.tag == 1) &&
 	(self.par != nil) &&
 	(self.par.direction !=0 ) &&
@@ -592,6 +608,11 @@ func (self *Layer) add(c Element) bool {
 	//	e1 = self.par.cans[len(self.par.cans)-1]
 	}
 	e := NewNode(self.cans[:self.splitID+1])
+	//if self.tem != nil {
+	//	if self.tem.Check1(e,self.par.cans[len(self.par.cans)-1]){
+	//		self.checkTem()
+	//	}
+	//}
 	self.par.add(e)
 	self.cans = self.cans[self.splitID:]
 	self.sum = 0

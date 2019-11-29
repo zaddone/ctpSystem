@@ -318,7 +318,9 @@ func orderCancelBack(db []byte){
 	if ca==nil {
 		return
 	}
-	ca.DelOrder(dbs[1])
+	//ca.DelOrder(dbs[1])
+	ca.Order = nil
+
 	//ca.Order.Update(2,dbs[1],false)
 }
 func tradeBack(db []byte){
@@ -333,7 +335,11 @@ func tradeBack(db []byte){
 		panic(err)
 	}
 	if dbs[2]=="0"{
-		ca.GetOrder(dbs[3]).SetOpenPrice(c)
+		o := ca.GetOrder(dbs[3])
+		if o == nil {
+			return
+		}
+		o.SetOpenPrice(c)
 		//ca.Order.Update(2,dbs[3],c)
 	}else{
 		//ca.Order.Update(4,dbs[3],c)
@@ -342,7 +348,7 @@ func tradeBack(db []byte){
 			return
 		}
 		o.EndOrder(ca,c)
-		ca.DelOrder(dbs[3])
+		//ca.DelOrder(dbs[3])
 	}
 
 }
