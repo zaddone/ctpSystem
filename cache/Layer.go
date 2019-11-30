@@ -27,6 +27,11 @@ func (self *Temple)Check1(e,e_ Element) bool {
 }
 func (self *Temple)Check(l *Layer){
 
+	if !l.par.CheckCansLong(self.Dis){
+		l.checkTem()
+	}
+	return
+
 	//if self.Stats<0{
 	//	return
 	//}
@@ -404,7 +409,7 @@ func (self *Layer) Add(e Element){
 		//begin := time.Unix(self.lastEl.LastTime())
 
 		dl := e.LastTime() -  self.lastEl.LastTime()
-		if dl <0 || dl>10 {
+		if dl <0 || dl>2 {
 			//fmt.Println("timeOut",dl,self.lastEl.Val(),e.Val())
 			if self.par == nil || self.par.tem == nil {
 			//if self.ca.Order == nil {
@@ -599,21 +604,23 @@ func (self *Layer) add(c Element) bool {
 	self.direction = maxD
 	//var e1 Element = nil
 	if self.par == nil {
+		tag := self.tag+1
+		if tag <3{
 		self.par = &Layer{
 			ca:self.ca,
 			child:self,
+			tag:tag,
 		}
-		self.par.tag = self.tag+1
+		}
+		//self.par.tag = self.tag+1
 	//}else{
 	//	e1 = self.par.cans[len(self.par.cans)-1]
 	}
-	e := NewNode(self.cans[:self.splitID+1])
-	//if self.tem != nil {
-	//	if self.tem.Check1(e,self.par.cans[len(self.par.cans)-1]){
-	//		self.checkTem()
-	//	}
-	//}
-	self.par.add(e)
+	if self.par != nil {
+		e := NewNode(self.cans[:self.splitID+1])
+		self.par.add(e)
+	}
+
 	self.cans = self.cans[self.splitID:]
 	self.sum = 0
 	for _,_c := range self.cans{

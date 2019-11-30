@@ -37,20 +37,24 @@ func main(){
 			}
 			cache.Count[i] = [4]float64{0,0,0,0}
 		}
-		cache.StoreCache(map[string]string{"InstrumentID":string(name)})
+		ca := cache.StoreCache(map[string]string{"InstrumentID":string(name)})
+		if ca.L == nil {
+			return nil
+		}
 		//fmt.Println(string(name))
 		err := b.ForEach(func(k,v []byte)error{
 			c := cache.NewCandle(
 				string(name),
 				int64(binary.BigEndian.Uint64(k)),
 				v)
-			if c.Ask == c.Bid {
-				b.Delete(k)
-				return nil
-			}
+			//if c.Ask == c.Bid {
+			//	b.Delete(k)
+			//	return nil
+			//}
 			//fmt.Println(c)
 			//Cache.Add(c)
-			cache.AddCandle(c)
+			//cache.AddCandle(c)
+			ca.L.Add(c)
 			return nil
 		})
 		if err != nil {

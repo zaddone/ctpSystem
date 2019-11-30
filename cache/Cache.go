@@ -2,7 +2,7 @@ package cache
 import(
 	"fmt"
 	"log"
-	//"strings"
+	"strings"
 	//"time"
 	"sync"
 	"github.com/zaddone/ctpSystem/config"
@@ -348,7 +348,7 @@ func Show(ins string) *Cache {
 
 }
 
-func StoreCache(info map[string]string){
+func StoreCache(info map[string]string) (c *Cache) {
 	ins := info["InstrumentID"]
 	_ , ok := CacheMap.Load(ins)
 	if ok{
@@ -365,7 +365,7 @@ func StoreCache(info map[string]string){
 	if err != nil {
 		panic(err)
 	}
-	c := &Cache{
+	c = &Cache{
 		DB:DB,
 		//Order:InsOrder{InsInfo:info},
 		Info:info,
@@ -376,7 +376,7 @@ func StoreCache(info map[string]string){
 	if len(config.Conf.Example)>0 {
 		isAdd := false
 		for _,e := range config.Conf.Example{
-			isAdd =  ins == e
+			isAdd = strings.HasPrefix(ins,e)
 			if isAdd {
 				break
 			}
