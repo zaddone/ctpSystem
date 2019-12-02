@@ -41,7 +41,7 @@ func WaitRunTime() {
 	I := 0
 	for i:=0;i<len(RunTime);i++{
 		r := &runStart{
-			b:time.Date(n.Year(),n.Month(),n.Day(),RunTime[i][0],RunTime[i][1],0,0,n.Location())
+			b:time.Date(n.Year(),n.Month(),n.Day(),RunTime[i][0],RunTime[i][1],0,0,n.Location()),
 		}
 		I := len(runS)
 		if I==0{
@@ -64,7 +64,7 @@ func WaitRunTime() {
 		}
 	}
 	if !r_.o{
-		<-time.After(n.Unix() - r_.e.Unix())
+		<-time.After(time.Duration(n.Unix() - r_.e.Unix()))
 	}
 	return
 }
