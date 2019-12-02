@@ -21,28 +21,52 @@ var(
 	Afternoon = [2][2]int{[2]int{12,55},[2]int{15,15}}
 	night = [2][2]int{[2]int{20,55},[2]int{2,30}}
 
-	RunTime = [][2]int{[2]int{8,55},[2]int{12,55},[2]int{20,55}}
-	StopTime = [][2]int{[2]int{11,30},[2]int{15,15},[2]int{2,30}}
+	RunTime = [][2]int{
+		[2]int{8,55},[2]int{11,30},
+		[2]int{12,55},[2]int{15,15},
+		[2]int{20,55},[2]int{2,30}}
+	//StopTime = [][2]int{[2]int{11,30},[2]int{15,15},[2]int{2,30}}
 )
+type runStart struct {
+	b time.Time
+	e time.Time
+	o bool
+}
+
 func WaitRunTime() {
-	I :=0
+
 	n := time.Now()
-	h := n.Hour()
-	for i,r := range RunTime {
-		if r[0]<=h {
-			if StopTime[i][0] >= h {
-				return
-			}else{
-				I := i+1
-				if len(RunTime) == I {
-					I = 0
-				}
-				break
+	//h := n.Hour()
+	var runS []*runStart
+	I := 0
+	for i:=0;i<len(RunTime);i++{
+		r := &runStart{
+			b:time.Date(n.Year(),n.Month(),n.Day(),RunTime[i][0],RunTime[i][1],0,0,n.Location())
+		}
+		I := len(runS)
+		if I==0{
+			r.o = true
+		}else{
+			runS[I].e = r.b
+			if I%2 == 0 {
+				r.o = true
 			}
 		}
+		runS = append(runS,r)
 	}
-	begin := time.Date(n.Year(),n.Month(),n.Day(),RunTime[I][0],RunTime[I][1],0,0,n.Location())
-	<-time.After(time.Duration(begin.Unix() - n.Unix()))
+	runS[I].e = runS[0].b.Add(time.Hour*24)
+	nu := n.Unix()
+	var r_ *runStart
+	for i,r := range runS {
+		if r.b.Before(n) && r.e.After(n){
+			r_ = r
+			break
+		}
+	}
+	if !r_.o{
+		<-time.After(n.Unix() - r_.e.Unix())
+	}
+	return
 }
 func init(){
 	//EntryList = make(chan *Entry,1000)
