@@ -22,8 +22,15 @@ type Temple struct{
 	Dis bool
 }
 func (self *Temple)Check1(e,e_ Element) bool {
-	return (e.Val()>e_.Val()) != self.Dis// && (e.Diff()>0)== self.Dis
-
+	if ((e.Val()>e_.Val()) != self.Dis) {
+		self.Stats++
+		if self.Stats>2 {
+			return false
+		}
+	}else{
+		self.Stats = 0
+	}
+	return true
 }
 func (self *Temple)Check(l *Layer){
 
@@ -618,6 +625,11 @@ func (self *Layer) add(c Element) bool {
 	}
 	if self.par != nil {
 		e := NewNode(self.cans[:self.splitID+1])
+
+		if self.tem != nil &&
+		!self.tem.Check1(e,self.par.cans[len(self.par.cans)-1]){
+			self.checkTem()
+		}
 		self.par.add(e)
 	}
 
@@ -629,16 +641,16 @@ func (self *Layer) add(c Element) bool {
 	}
 	//if self.tag == 1 {
 		//isU:= true
-		if self.tem != nil  {
+		//if self.tem != nil  {
 			//isU = self.checkTem()
 			//if self.tem.Stats >=0{
 				//self.checkTem()
 				//self.tem.SetStats()
-				self.tem.Check(self)
+				//self.tem.Check(self)
 			//}else{
 			//	self.tem = nil
 			//}
-		}
+		//}
 		//if isU{
 		//if self.par.direction!=0 &&
 		//(self.par.direction>0) == (self.direction>0)&&
