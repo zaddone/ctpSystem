@@ -17,7 +17,33 @@ import(
 var(
 	LogFileName   = flag.String("c", "conf.log", "config log")
 	Conf *Config
+	forenoon = [2][2]int{[2]int{8,55},[2]int{11,30}}
+	Afternoon = [2][2]int{[2]int{12,55},[2]int{15,15}}
+	night = [2][2]int{[2]int{20,55},[2]int{2,30}}
+
+	RunTime = [][2]int{[2]int{8,55},[2]int{12,55},[2]int{20,55}}
+	StopTime = [][2]int{[2]int{11,30},[2]int{15,15},[2]int{2,30}}
 )
+func WaitRunTime() {
+	I :=0
+	n := time.Now()
+	h := n.Hour()
+	for i,r := range RunTime {
+		if r[0]<=h {
+			if StopTime[i][0] >= h {
+				return
+			}else{
+				I := i+1
+				if len(RunTime) == I {
+					I = 0
+				}
+				break
+			}
+		}
+	}
+	begin := time.Date(n.Year(),n.Month(),n.Day(),RunTime[I][0],RunTime[I][1],0,0,n.Location())
+	<-time.After(time.Duration(begin.Unix() - n.Unix()))
+}
 func init(){
 	//EntryList = make(chan *Entry,1000)
 	//flag.Parse()
@@ -37,8 +63,8 @@ type UserInfo struct {
 }
 
 func (self *UserInfo)RunTr(path string,local string,hand func([]byte)){
+	self.sendTr = make(chan []byte,100)
 	for{
-		self.sendTr = make(chan []byte,100)
 		runComm(path,[]string{
 			self.BrokerID,
 			self.UserID,
@@ -47,12 +73,14 @@ func (self *UserInfo)RunTr(path string,local string,hand func([]byte)){
 			self.Taddr[self.DefAdd],
 			local,
 		},self.sendTr,hand)
+		WaitRunTime()
 	}
 }
 func (self *UserInfo)RunMd(path string,local string,hand func([]byte)){
-	for{
+
 	self.sendMd = make(chan []byte,100)
-	runComm(path,[]string{
+	for{
+		runComm(path,[]string{
 			self.BrokerID,
 			self.UserID,
 			self.Password,
@@ -60,6 +88,7 @@ func (self *UserInfo)RunMd(path string,local string,hand func([]byte)){
 			self.Maddr[self.DefAdd],
 			local,
 		},self.sendMd,hand)
+		WaitRunTime()
 	}
 }
 
