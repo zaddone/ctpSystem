@@ -55,18 +55,16 @@ func WaitRunTime() {
 		runS = append(runS,r)
 	}
 	runS[I].e = runS[0].b.Add(time.Hour*24)
-	nu := n.Unix()
-	var r_ *runStart
-	for i,r := range runS {
+	//nu := n.Unix()
+	//var r_ *runStart
+	for _,r := range runS {
 		if r.b.Before(n) && r.e.After(n){
-			r_ = r
+		if !r.o{
+			<-time.After(time.Duration(n.Unix() - r.e.Unix()))
+		}
 			break
 		}
 	}
-	if !r_.o{
-		<-time.After(time.Duration(n.Unix() - r_.e.Unix()))
-	}
-	return
 }
 func init(){
 	//EntryList = make(chan *Entry,1000)
