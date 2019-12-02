@@ -63,8 +63,8 @@ type UserInfo struct {
 }
 
 func (self *UserInfo)RunTr(path string,local string,hand func([]byte)){
-	self.sendTr = make(chan []byte,100)
 	for{
+		self.sendTr = make(chan []byte,100)
 		runComm(path,[]string{
 			self.BrokerID,
 			self.UserID,
@@ -78,8 +78,8 @@ func (self *UserInfo)RunTr(path string,local string,hand func([]byte)){
 }
 func (self *UserInfo)RunMd(path string,local string,hand func([]byte)){
 
-	self.sendMd = make(chan []byte,100)
 	for{
+		self.sendMd = make(chan []byte,100)
 		runComm(path,[]string{
 			self.BrokerID,
 			self.UserID,
@@ -100,23 +100,6 @@ func runComm(
 	//fmt.Println(path,word)
 	ctx,cancel := context.WithCancel(context.Background())
 	cmd := exec.CommandContext(ctx,path,word...)
-	//cmd.Stdout = io.SeekStart
-	//outerr,err := cmd.StderrPipe()
-	//if err != nil {
-	//	panic(err)
-	//}
-	//errbuf := bufio.NewReader(outerr)
-	//go func (){
-	//	line,err := errbuf.ReadBytes('\n')
-	//	if err != nil {
-	//		fmt.Println(err)
-	//		cancel()
-	//		return
-	//	}
-	//	log.Println(string(line))
-	//	fmt.Println(err)
-	//	cancel()
-	//}()
 
 	out,err := cmd.StdoutPipe()
 	if err != nil {
