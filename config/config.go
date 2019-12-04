@@ -43,11 +43,11 @@ func WaitRunTime() {
 		r := &runStart{
 			b:time.Date(n.Year(),n.Month(),n.Day(),RunTime[i][0],RunTime[i][1],0,0,n.Location()),
 		}
-		I := len(runS)
+		I = len(runS)
 		if I==0{
 			r.o = true
 		}else{
-			runS[I].e = r.b
+			runS[I-1].e = r.b
 			if I%2 == 0 {
 				r.o = true
 			}

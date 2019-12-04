@@ -22,11 +22,19 @@ type Temple struct{
 	Dis bool
 }
 func (self *Temple)Check1(e,e_ Element) bool {
+	return false
+	//if self.Stats>0{
+	//	return false
+	//}
+
+	//self.Stats++
+	//return true
+
 	if ((e.Val()>e_.Val()) != self.Dis) {
 		self.Stats++
-		if self.Stats>2 {
-			return false
-		}
+		//if self.Stats>1 {
+		return false
+		//}
 	}else{
 		self.Stats = 0
 	}
@@ -182,16 +190,21 @@ func (self *Layer) checkTem() (isok bool) {
 				Count[t][2]++
 			}
 			dis_:= c_.Val() - self.tem.can.Val()
+
 			//absDis := math.Abs(dis_)
 			if  (dis_>0) == self.tem.Dis {
 			//if isok {
 				Count[t][1]++
 				//self.tem.Stats = 1
 				//Count[t][0] += absDis
+				Count[t][4] += math.Abs(Diff)
+				Count[t][5] += math.Abs(dis_)
 			}else{
 				Count[t][0]++
 				//self.tem.Stats = 0
 				//Count[t][0] -= absDis
+				Count[t][4] -= math.Abs(Diff)
+				Count[t][5] -= math.Abs(dis_)
 			}
 			//Count[t][self.tem.Stats]++
 			//fmt.Println(self.tem.Stats,Count[t],c_.Time() - self.tem.can.Time())
@@ -201,7 +214,7 @@ func (self *Layer) checkTem() (isok bool) {
 
 	self.tem = nil
 	//self.tem.Stats = -1
-	//if config.Conf.IsTrader{
+	//if config.Conf.IsTrader {
 	if self.ca.Order != nil {
 		self.ca.Order.SendCloseOrder(c_.(*Candle),self.ca)
 	}
@@ -275,9 +288,33 @@ func (self *Layer) getNormalization(dis bool)(X,Y []float64){
 
 }
 func (self *Layer) getTemplate(dis bool,e Element){
-	//if self.tem.Stats <0{
+
+	if (self.par == nil) {
+		return
+	}
+	if (self.par.direction ==0 ) {
+		return
+	}
+
+	if (self.par.direction>0) == (self.direction<0){
+		return
+	//	if self.par.splitID!=0{
+	//		return
+	//	}
+	//}else{
+	//	if self.par.splitID==0{
+	//		return
+	//	}
+	}
+
+	//if math.Abs(self.par.cans[len(self.par.cans)-1].Diff()) < math.Abs(self.direction) {
 	//	return
 	//}
+
+	if (math.Abs(self.direction) < self.par.GetAmplitude(self.direction>0)) {
+		return
+	}
+
 	diff := e.Val() - self.ca.GetLast().(Element).Val()
 	if (diff>0) != dis {
 		return
@@ -373,7 +410,7 @@ func (self *Layer) baseAdd(e Element){
 	}
 
 	//if !config.Conf.IsTrader{
-		self.CheckPL(e)
+		//self.CheckPL(e)
 	//}
 	le := len(self.cans)
 	self.cans = append(self.cans,e)
@@ -417,6 +454,7 @@ func (self *Layer) Add(e Element){
 
 		dl := e.LastTime() -  self.lastEl.LastTime()
 		if dl <0 || dl>2 {
+		//if dl <0  {
 			//fmt.Println("timeOut",dl,self.lastEl.Val(),e.Val())
 			if self.par == nil || self.par.tem == nil {
 			//if self.ca.Order == nil {
@@ -580,15 +618,15 @@ func (self *Layer) add(c Element) bool {
 
 	//if (self.splitID == 0) &&
 	if (self.tag == 1) &&
-	(self.par != nil) &&
-	(self.par.direction !=0 ) &&
-	(self.tem == nil) &&
+	//(self.par != nil) &&
+	//(self.par.direction !=0 ) &&
+	(self.tem == nil) {
 	//self.CheckSplit() &&
 	//self.par.CheckCansLong(self.direction<0) &&
-	(self.par.direction>0) == (self.direction<0) &&
-	//(self.par.splitID==0) &&
-	math.Abs(self.par.cans[len(self.par.cans)-1].Diff())>math.Abs(self.direction)&&
-	(math.Abs(self.direction) > self.par.GetAmplitude(self.direction>0)) {
+	//(self.par.direction>0) == (self.direction>0) &&
+	//(self.par.splitID!=0) &&
+	//math.Abs(self.par.cans[len(self.par.cans)-1].Diff())>math.Abs(self.direction)&&
+	//(math.Abs(self.direction) > self.par.GetAmplitude(self.direction>0)) {
 		self.getTemplate(self.direction<0,self.cans[0])
 	}
 
@@ -628,7 +666,9 @@ func (self *Layer) add(c Element) bool {
 
 		if self.tem != nil &&
 		!self.tem.Check1(e,self.par.cans[len(self.par.cans)-1]){
+			//if (c.Val()<self.tem.lcan.Val()) == self.tem.Dis {
 			self.checkTem()
+			//}
 		}
 		self.par.add(e)
 	}
@@ -660,9 +700,6 @@ func (self *Layer) add(c Element) bool {
 		//(e.Val() > e1.Val()) == (self.direction<0){
 		//}
 	//}
-
-
-
 	return true
 
 }

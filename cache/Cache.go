@@ -13,7 +13,7 @@ import(
 	//"os"
 )
 var (
-	Count [5][4]float64
+	Count [5][6]float64
 	OrderCount [6]float64
 
 	Order int = 1
@@ -349,6 +349,7 @@ func Show(ins string) *Cache {
 }
 
 func StoreCache(info map[string]string) (c *Cache) {
+
 	ins := info["InstrumentID"]
 	_ , ok := CacheMap.Load(ins)
 	if ok{

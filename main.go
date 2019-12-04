@@ -331,7 +331,6 @@ func tradeBack(db []byte){
 	}
 	c,err := strconv.ParseFloat(dbs[1],64)
 	if err != nil {
-		//return
 		panic(err)
 	}
 	if dbs[2]=="0"{
@@ -340,75 +339,13 @@ func tradeBack(db []byte){
 			return
 		}
 		o.SetOpenPrice(c)
-		//ca.Order.Update(2,dbs[3],c)
 	}else{
-		//ca.Order.Update(4,dbs[3],c)
 		o := ca.GetOrder(dbs[3])
 		if o == nil {
 			return
 		}
 		o.EndOrder(ca,c)
-		//ca.DelOrder(dbs[3])
 	}
 
 }
-//func _tradeBack(db []byte){
-//	dbs := strings.Split(string(db)," ")
-//	fmt.Println(dbs)
-//	or_,ok :=  cache.InsOrderMap.Load(dbs[0])
-//	if !ok {
-//		//fmt.Println(string(db))
-//		return
-//	}
-//	or:=or_.(*cache.InsOrder)
-//	if dbs[2]=="0"{
-//
-//		c,err := strconv.ParseFloat(dbs[1],64)
-//		if err != nil {
-//			//return
-//			panic(err)
-//		}
-//		or.OpenPrice = c
-//		fmt.Println(
-//			"_open",
-//			or.Open.Ask,
-//			or.Open.Bid,
-//			or.Open.Val(),
-//			or.Dis)
-//			//var r map[string]*cache.InsOrder
-//			//r_,ok := InsTraderMap.Load(dbs[0])
-//			//if !ok{
-//			//	r = map[string]*cache.InsOrder{or}
-//			//}else{
-//			//	r = append(r_.([]*cache.InsOrder),or)
-//			//}
-//			//InsTraderMap.Store(dbs[0],r)
-//	}else{
-//		fmt.Println(
-//			"__close",
-//			or.OpenPrice,
-//			dbs[1],
-//			or.Dis)
-//		c,err := strconv.ParseFloat(dbs[1],64)
-//		if err != nil {
-//			return
-//			//panic(err)
-//		}
-//		o,err := strconv.ParseFloat(or.OpenPrice,64)
-//		if err != nil {
-//			return
-//			//panic(err)
-//		}
-//		if (o<c) == or.Dis{
-//			OrderCount[1]++
-//		}else{
-//			OrderCount[0]++
-//		}
-//		fmt.Println("------------------------------------")
-//		fmt.Println(OrderCount,OrderCount[0]/OrderCount[1])
-//		if or.Close != nil {
-//			fmt.Println("-------",or.Open.Val(),or.Close.Val())
-//		}
-//	}
-//
-//}
+
