@@ -245,13 +245,15 @@ func (self *Cache) AddOrder(dis bool,stop Element){
 	}
 	self.Order = &InsOrder{
 		insInfo:self.Info,
-		Stop:func()float64{
+	}
+	if stop != nil {
+		self.Order.Stop = func()float64{
 			if dis{
 				return stop.Max()
 			}else{
 				return stop.Min()
 			}
-		}(),
+		}()
 	}
 	self.Order.OpenOrder(self.GetLast().(*Candle),dis)
 	self.Order.db = self.DB
@@ -309,6 +311,9 @@ func (self *Cache)GetOrder(orderRef string)(o *InsOrder) {
 //		}
 //	}
 //	self.Unlock()
+//}
+//func (self *Cache) GetTemLayer() *Layer  {
+//	l := self.L.par.isTem()
 //}
 func (self *Cache)GetLast() interface{} {
 	return self.L.getLast()
@@ -382,7 +387,7 @@ func StoreCache(info map[string]string) (c *Cache) {
 				break
 			}
 		}
-		if !isAdd {
+		if isAdd {
 			return
 		}
 	}
