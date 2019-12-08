@@ -4,19 +4,20 @@ import(
 	//"os/exec"
 	"fmt"
 	//"bufio"
-	//"time"
+	"time"
 )
-type InsOrder struct {
-	State int
-	par *InsOrder
-}
-func (self *InsOrder)cop(){
-	self.par = &(*self)
-	self.par.State = self.State+1
-}
-
+//type InsOrder struct {
+//	State int
+//	par *InsOrder
+//}
+//func (self *InsOrder)cop(){
+//	self.par = &(*self)
+//	self.par.State = self.State+1
+//}
+//
 func main(){
-	O := &InsOrder{}
-	O.cop()
-	fmt.Println(O.State,O.par.State)
+	//O := &InsOrder{}
+	//O.cop()
+	n := time.Now()
+	fmt.Println(n.Hour(),n.Minute())
 }
