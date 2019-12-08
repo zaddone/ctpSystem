@@ -15,16 +15,15 @@ import(
 var (
 	Count [5][6]float64
 	OrderCount [6]float64
-
 	Order int = 1
 	CacheMap sync.Map
 )
 func AddCandle(c *Candle) {
+
 	c_,ok := CacheMap.Load(c.Name())
 	if !ok {
 		panic(c.Name())
 	}
-
 	ca := c_.(*Cache)
 	if config.Conf.IsTrader{
 		go c.ToSave(ca.DB)
@@ -32,6 +31,7 @@ func AddCandle(c *Candle) {
 	if ca.L != nil {
 		ca.L.Add(c)
 	}
+
 }
 type InsOrder struct {
 
