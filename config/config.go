@@ -60,7 +60,7 @@ func WaitRunTime() {
 	for _,r := range runS {
 		if r.b.Before(n) && r.e.After(n){
 		if !r.o{
-			<-time.After(time.Duration(r.e.Unix() - n.Unix()))
+			<-time.After(time.Duration(r.e.Unix()-n.Unix()))
 		}
 			break
 		}

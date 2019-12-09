@@ -15,6 +15,7 @@ import(
 type Temple struct{
 	can Element
 	stop Element
+	long float64
 	lcan Element
 	XMin,XMax,YMin,YMax float64
 	Wei []float64
@@ -211,7 +212,6 @@ func (self *Layer) checkTem() (isok bool) {
 		//}
 	//}
 
-
 	self.tem = nil
 	//self.tem.Stats = -1
 	//if config.Conf.IsTrader {
@@ -287,39 +287,59 @@ func (self *Layer) getNormalization(dis bool)(X,Y []float64){
 	return
 
 }
-func (self *Layer) getTemplate(dis bool,e Element){
+func (self *Layer) isTem() *Layer {
+	if self.tem != nil {
+		return self
+	}
+	if self.par== nil {
+		return nil
+	}
+	return self.par.isTem()
+}
 
+func (self *Layer) getTemplate(dis bool,e Element){
 	if (self.par == nil) {
 		return
 	}
 	if (self.par.direction ==0 ) {
 		return
 	}
-
-	if (self.par.direction>0) == (self.direction<0){
+	//diff := e.Val() - self.ca.GetLast().(Element).Val()
+	//if (diff>0) != dis {
+	//	return
+	//}
+	//if (self.par.direction>0) == (self.direction<0){
+	//	return
+	//}
+	diff_ := self.par.GetAmplitude(self.direction>0)
+	if ( math.Abs(self.direction) < diff_ ) {
 		return
-	//	if self.par.splitID!=0{
-	//		return
-	//	}
-	//}else{
-	//	if self.par.splitID==0{
-	//		return
-	//	}
 	}
+	diff_ = math.Abs(self.direction)
+	//L := self.ca.L.isTem()
+	//if L != nil{
+	//	fmt.Println(L.tag)
+	//	if L.tag < self.tag {
+	//		self.tem = L.tem
+	//		L.tem = nil
+	//	//}else{
+	//	//	if L.tem.Dis == (self.direction>0)
+	//	}
+	//	return
+	//}
+
+
+	//if self.par.splitID ==0 {
+	//	return
+	//}
 
 	//if math.Abs(self.par.cans[len(self.par.cans)-1].Diff()) < math.Abs(self.direction) {
 	//	return
 	//}
 
-	if (math.Abs(self.direction) < self.par.GetAmplitude(self.direction>0)) {
-		return
-	}
 
-	diff := e.Val() - self.ca.GetLast().(Element).Val()
-	if (diff>0) != dis {
-		return
-		panic(9)
-	}
+
+
 	//fmt.Println(diff,NewNode(self.cans).Diff())
 
 	//var diff1,diff2,n1,n2 float64
@@ -337,7 +357,10 @@ func (self *Layer) getTemplate(dis bool,e Element){
 	//}
 
 	self.getNormalization(dis)
-	self.tem.stop = e
+	//self.par.cans[len(self.par.cans)-1].Each(func(el Element)error{
+	//	self.tem.stop = el
+	//	return io.EOF
+	//})
 
 	//X,Y := self.getNormalization()
 	//self.tem.Wei = make([]float64,config.Conf.Weight+self.tag)
@@ -347,8 +370,13 @@ func (self *Layer) getTemplate(dis bool,e Element){
 	////fmt.Println(self.tem.Wei,len(X))
 	//self.tem = &Temple{}
 
-	self.tem.can = self.getLast()
-	self.tem.lcan = self.cans[len(self.cans)-1]
+	self.tem.can  = self.getLast()
+	if self.tem.Dis {
+		self.tem.long = self.tem.can.Min() - diff_
+	}else{
+		self.tem.long = self.tem.can.Max() + diff_
+	}
+	//self.tem.lcan = self.cans[len(self.cans)-1]
 
 	//var stop Element
 	//self.cans[0].Each(func(e Element)error{
@@ -411,6 +439,7 @@ func (self *Layer) baseAdd(e Element){
 
 	//if !config.Conf.IsTrader{
 		//self.CheckPL(e)
+		//self.CheckSL(e)
 	//}
 	le := len(self.cans)
 	self.cans = append(self.cans,e)
@@ -449,15 +478,16 @@ func (self *Layer) baseAdd(e Element){
 }
 func (self *Layer) Add(e Element){
 	if self.lastEl !=nil {
-		//end := time.Unix(e.LastTime()).Day() != 
-		//begin := time.Unix(self.lastEl.LastTime())
+		//end := time.Unix(e.LastTime(),0).Day()
+		//begin := time.Unix(self.lastEl.LastTime(),0).Day()
 
 		dl := e.LastTime() -  self.lastEl.LastTime()
-		if dl <0 || dl>2 {
-		//if dl <0  {
+		//if dl <0 || dl>2 {
+		//if (dl < 0)  || (end!=begin) {
+		if (dl < 0)  || (dl>3600) {
 			//fmt.Println("timeOut",dl,self.lastEl.Val(),e.Val())
-			if self.par == nil || self.par.tem == nil {
-			//if self.ca.Order == nil {
+			//if self.par == nil || self.par.tem == nil {
+			if self.ca.Order == nil {
 				self.canChan<-nil
 			}
 		}
@@ -518,6 +548,21 @@ func (self *Layer) initAdd (c Element){
 	}
 
 }
+
+func (self *Layer)CheckSL(e Element) {
+	if self.tem == nil {
+		if self.par != nil {
+			self.par.CheckSL(e)
+		}
+	}else{
+		if self.tem.Stats != -1 {
+		if (e.Val()<self.tem.long) == self.tem.Dis {
+			self.checkTem()
+			return
+		}
+		}
+	}
+}
 func (self *Layer)CheckPL(e Element) {
 	//return
 	if self.tem == nil {
@@ -528,7 +573,7 @@ func (self *Layer)CheckPL(e Element) {
 		//if (self.tem.Stats < 0) {
 		//	return
 		//}
-		if (e.Val()>self.tem.stop.Val()) == self.tem.Dis {
+		if (e.Val()>self.tem.long) == self.tem.Dis {
 			//fmt.Println(e.Val(),self.tem.stop.Val(),self.tem.Dis)
 			//fmt.Println(Count[0])
 			self.checkTem()
@@ -650,27 +695,35 @@ func (self *Layer) add(c Element) bool {
 	//var e1 Element = nil
 	if self.par == nil {
 		tag := self.tag+1
-		if tag <3{
+		//if tag <4{
+		//fmt.Println(tag)
 		self.par = &Layer{
 			ca:self.ca,
 			child:self,
 			tag:tag,
 		}
-		}
+		//}
 		//self.par.tag = self.tag+1
 	//}else{
 	//	e1 = self.par.cans[len(self.par.cans)-1]
 	}
-	if self.par != nil {
-		e := NewNode(self.cans[:self.splitID+1])
 
-		if self.tem != nil &&
-		!self.tem.Check1(e,self.par.cans[len(self.par.cans)-1]){
-			//if (c.Val()<self.tem.lcan.Val()) == self.tem.Dis {
+	if self.tem != nil {
+		if self.tem.Stats != -1 {
 			self.checkTem()
-			//}
 		}
-		self.par.add(e)
+		self.tem = nil
+	}
+	if self.par != nil {
+
+		//e := NewNode(self.cans[:self.splitID+1])
+		//if self.tem != nil &&
+		//!self.tem.Check1(e,self.par.cans[len(self.par.cans)-1]){
+		//	//if (c.Val()<self.tem.lcan.Val()) == self.tem.Dis {
+		//	self.checkTem()
+		//	//}
+		//}
+		self.par.add(NewNode(self.cans[:self.splitID+1]))
 	}
 
 	self.cans = self.cans[self.splitID:]

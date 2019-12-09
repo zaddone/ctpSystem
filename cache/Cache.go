@@ -15,16 +15,15 @@ import(
 var (
 	Count [5][6]float64
 	OrderCount [6]float64
-
 	Order int = 1
 	CacheMap sync.Map
 )
 func AddCandle(c *Candle) {
+
 	c_,ok := CacheMap.Load(c.Name())
 	if !ok {
 		panic(c.Name())
 	}
-
 	ca := c_.(*Cache)
 	if config.Conf.IsTrader{
 		go c.ToSave(ca.DB)
@@ -32,6 +31,7 @@ func AddCandle(c *Candle) {
 	if ca.L != nil {
 		ca.L.Add(c)
 	}
+
 }
 type InsOrder struct {
 
@@ -245,13 +245,15 @@ func (self *Cache) AddOrder(dis bool,stop Element){
 	}
 	self.Order = &InsOrder{
 		insInfo:self.Info,
-		Stop:func()float64{
+	}
+	if stop != nil {
+		self.Order.Stop = func()float64{
 			if dis{
 				return stop.Max()
 			}else{
 				return stop.Min()
 			}
-		}(),
+		}()
 	}
 	self.Order.OpenOrder(self.GetLast().(*Candle),dis)
 	self.Order.db = self.DB
@@ -309,6 +311,9 @@ func (self *Cache)GetOrder(orderRef string)(o *InsOrder) {
 //		}
 //	}
 //	self.Unlock()
+//}
+//func (self *Cache) GetTemLayer() *Layer  {
+//	l := self.L.par.isTem()
 //}
 func (self *Cache)GetLast() interface{} {
 	return self.L.getLast()
@@ -382,7 +387,7 @@ func StoreCache(info map[string]string) (c *Cache) {
 				break
 			}
 		}
-		if !isAdd {
+		if isAdd {
 			return
 		}
 	}
