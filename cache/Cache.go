@@ -145,6 +145,24 @@ func (self *InsOrder)EndOrder(ca *Cache,p float64){
 		OrderCount[4]++
 	}
 	fmt.Println(OrderCount)
+	var c0,c1,c2,c3,c4,c5 float64
+	for _,c := range Count[:4]{
+		c0+=c[0]
+		c1+=c[1]
+		c2+=c[2]
+		c3+=c[3]
+		c4+=c[4]
+		c5+=c[5]
+		//sum += c[0]
+		//if (c[1]+c[2]) >0 {
+		//	fmt.Println(string(name),i,c,c[1]/c[2])
+		//}
+	}
+	c_ := Count[4]
+	if c1+c0 >0 {
+		fmt.Println(self.insInfo["InstrumentID"],c0,c1,c2,c3,c4,c5,c_[0]/c_[1],c_[2]/c_[3],c_)
+	}
+
 	err := self.SaveDB()
 	if err != nil {
 		panic(err)

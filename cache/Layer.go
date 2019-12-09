@@ -186,8 +186,10 @@ func (self *Layer) checkTem() (isok bool) {
 			}
 			if self.tem.Dis == (Diff>0){
 			//if isok_ {
+				Count[t][4] += math.Abs(Diff)
 				Count[t][3]++
 			}else{
+				Count[t][4] -= math.Abs(Diff)
 				Count[t][2]++
 			}
 			dis_:= c_.Val() - self.tem.can.Val()
@@ -198,13 +200,11 @@ func (self *Layer) checkTem() (isok bool) {
 				Count[t][1]++
 				//self.tem.Stats = 1
 				//Count[t][0] += absDis
-				Count[t][4] += math.Abs(Diff)
 				Count[t][5] += math.Abs(dis_)
 			}else{
 				Count[t][0]++
 				//self.tem.Stats = 0
 				//Count[t][0] -= absDis
-				Count[t][4] -= math.Abs(Diff)
 				Count[t][5] -= math.Abs(dis_)
 			}
 			//Count[t][self.tem.Stats]++
@@ -297,36 +297,52 @@ func (self *Layer) isTem() *Layer {
 	return self.par.isTem()
 }
 
-func (self *Layer) getTemplate(dis bool,e Element){
+func (self *Layer) getTemplate(dis bool){
 	if (self.par == nil) {
 		return
 	}
 	if (self.par.direction ==0 ) {
 		return
 	}
+	if (self.par.direction>0) == (self.direction<0){
+		return
+	}
+	//if (self.par.splitID!=0){
+	//	return
+	//}
+
+	diff_ := self.par.GetAmplitude(self.direction>0)
+	var sum float64
+	for _,c := range self.cans {
+		sum += c.Max() - c.Min()
+	}
+	if diff_ < sum/float64(len(self.cans)){
+		return
+	}
+
+	//if math.Abs(self.direction)/(e.Max()-e.Min())<2{
+	//	return
+	//}
 	//diff := e.Val() - self.ca.GetLast().(Element).Val()
 	//if (diff>0) != dis {
 	//	return
 	//}
-	//if (self.par.direction>0) == (self.direction<0){
-	//	return
-	//}
-	diff_ := self.par.GetAmplitude(self.direction>0)
+
 	if ( math.Abs(self.direction) < diff_ ) {
 		return
 	}
-	diff_ = math.Abs(self.direction)
-	//L := self.ca.L.isTem()
-	//if L != nil{
-	//	fmt.Println(L.tag)
-	//	if L.tag < self.tag {
-	//		self.tem = L.tem
-	//		L.tem = nil
-	//	//}else{
-	//	//	if L.tem.Dis == (self.direction>0)
-	//	}
-	//	return
-	//}
+	//diff_ = math.Abs(self.direction)
+	L := self.ca.L.isTem()
+	if L != nil{
+		//fmt.Println(L.tag)
+		if L.tag < self.tag {
+			self.tem = L.tem
+			L.tem = nil
+		//}else{
+		//	if L.tem.Dis == (self.direction>0)
+		}
+		return
+	}
 
 
 	//if self.par.splitID ==0 {
@@ -371,11 +387,11 @@ func (self *Layer) getTemplate(dis bool,e Element){
 	//self.tem = &Temple{}
 
 	self.tem.can  = self.getLast()
-	if self.tem.Dis {
-		self.tem.long = self.tem.can.Min() - diff_
-	}else{
-		self.tem.long = self.tem.can.Max() + diff_
-	}
+	//if self.tem.Dis {
+	//	self.tem.long = self.tem.can.Min() - diff_
+	//}else{
+	//	self.tem.long = self.tem.can.Max() + diff_
+	//}
 	//self.tem.lcan = self.cans[len(self.cans)-1]
 
 	//var stop Element
@@ -484,7 +500,7 @@ func (self *Layer) Add(e Element){
 		dl := e.LastTime() -  self.lastEl.LastTime()
 		//if dl <0 || dl>2 {
 		//if (dl < 0)  || (end!=begin) {
-		if (dl < 0)  || (dl>3600) {
+		if (dl < 0)  || (dl>3600*2) {
 			//fmt.Println("timeOut",dl,self.lastEl.Val(),e.Val())
 			//if self.par == nil || self.par.tem == nil {
 			if self.ca.Order == nil {
@@ -512,10 +528,13 @@ func (self *Layer) initAdd (c Element){
 			c = MergeElement(last,c)
 			le--
 			self.cans[le] = c
-			self.sum =self.sum - (last.Max()-last.Min()) + (c.Max()-c.Min())
+
+			//self.sum =self.sum- (last.Max()-last.Min())+(c.Max()-c.Min())
+			self.sum=self.sum-math.Abs(last.Diff()) + math.Abs(c.Diff())
 			//self.sum  += c.Max()-c.Min()
 		}else{
-			self.sum  += c.Max()-c.Min()
+			//self.sum  += c.Max()-c.Min()
+			self.sum  += math.Abs(c.Diff())
 			self.cans = append(self.cans,c)
 		}
 		//le--
@@ -543,8 +562,8 @@ func (self *Layer) initAdd (c Element){
 	self.cans = self.cans[self.splitID:]
 	self.sum = 0
 	for _,_c := range self.cans{
-		self.sum  += _c.Max()-_c.Min()
-		//self.sum  += math.Abs(_c.Diff())
+		//self.sum  += _c.Max()-_c.Min()
+		self.sum  += math.Abs(_c.Diff())
 	}
 
 }
@@ -632,9 +651,11 @@ func (self *Layer) add(c Element) bool {
 			c = MergeElement(last,c)
 			le--
 			self.cans[le] = c
-			self.sum =self.sum- (last.Max()-last.Min())+(c.Max()-c.Min())
+			//self.sum =self.sum- (last.Max()-last.Min())+(c.Max()-c.Min())
+			self.sum=self.sum-math.Abs(last.Diff()) + math.Abs(c.Diff())
 		}else{
-			self.sum  += c.Max()-c.Min()
+			//self.sum  += c.Max()-c.Min()
+			self.sum  += math.Abs(c.Diff())
 			self.cans = append(self.cans,c)
 		}
 	}else{
@@ -661,8 +682,8 @@ func (self *Layer) add(c Element) bool {
 		}
 	}
 
-	//if (self.splitID == 0) &&
-	if (self.tag == 1) &&
+	if (self.splitID > 0) &&
+	//if (self.tag == 1) &&
 	//(self.par != nil) &&
 	//(self.par.direction !=0 ) &&
 	(self.tem == nil) {
@@ -672,7 +693,7 @@ func (self *Layer) add(c Element) bool {
 	//(self.par.splitID!=0) &&
 	//math.Abs(self.par.cans[len(self.par.cans)-1].Diff())>math.Abs(self.direction)&&
 	//(math.Abs(self.direction) > self.par.GetAmplitude(self.direction>0)) {
-		self.getTemplate(self.direction<0,self.cans[0])
+		self.getTemplate(self.direction<0)
 	}
 
 	//if self.tem != nil {
@@ -729,8 +750,8 @@ func (self *Layer) add(c Element) bool {
 	self.cans = self.cans[self.splitID:]
 	self.sum = 0
 	for _,_c := range self.cans{
-		//self.sum += math.Abs(_c.Diff())
-		self.sum  += _c.Max()-_c.Min()
+		self.sum += math.Abs(_c.Diff())
+		//self.sum  += _c.Max()-_c.Min()
 	}
 	//if self.tag == 1 {
 		//isU:= true
