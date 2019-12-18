@@ -5,11 +5,11 @@ import(
 	//"io"
 	//"github.com/zaddone/analog/fitting"
 	"github.com/zaddone/ctpSystem/config"
-	"github.com/boltdb/bolt"
-	"encoding/binary"
-	"encoding/gob"
-	"bytes"
-	//"time"
+	//"github.com/boltdb/bolt"
+	//"encoding/binary"
+	//"encoding/gob"
+	//"bytes"
+	"time"
 	//"sync"
 )
 type Temple struct{
@@ -22,123 +22,10 @@ type Temple struct{
 	Stats int
 	Dis bool
 }
-func (self *Temple)Check1(e,e_ Element) bool {
-	return false
-	//if self.Stats>0{
-	//	return false
-	//}
 
-	//self.Stats++
-	//return true
-
-	if ((e.Val()>e_.Val()) != self.Dis) {
-		self.Stats++
-		//if self.Stats>1 {
-		return false
-		//}
-	}else{
-		self.Stats = 0
-	}
-	return true
-}
-func (self *Temple)Check(l *Layer){
-
-	if !l.par.CheckCansLong(self.Dis){
-		l.checkTem()
-	}
-	return
-
-	//if self.Stats<0{
-	//	return
-	//}
-	//la := l.cans[len(l.cans)-1]
-	//if (la.Val()>self.stop.Val()) == self.Dis {
-	//	//fmt.Println(Count[0])
-	//	l.checkTem()
-	//	//fmt.Println(self.Stats,"sl",Count[0])
-	//	//fmt.Println(Count[0])
-	//	return
-	//}
-	//if self.Stats < 1 {
-	//	//if l.splitID == 0 {
-	//	//	return
-	//	//}
-	//	//e := NewNode(l.cans[:(l.splitID+1)])
-	//	//e_ := NewNode(l.cans[l.splitID:])
-	//	//dis := e_.Val() > e.Val()
-	//	//if self.Dis != dis {
-	//	//	l.checkTem()
-	//	//}
-	//	return
-	//}
-
-
-	if (l.direction>0) != self.Dis {
-		//if (la.Val()>self.can.Val()) == self.Dis {
-		//	fmt.Println(Count[0])
-		//	l.checkTem()
-		//	fmt.Println(self.Stats,"sl",Count[0])
-		//	return
-		//}
-		//if l.splitID != 0 {
-		//	return
-		//}
-		//e := l.par.cans[len(l.par.cans)-1]
-		//e_:= NewNode(l.cans)
-		//dis := e_.Val() > e.Val()
-		//fmt.Println(self.Dis,e.Diff(),e_.Diff(),e.Val()<e_.Val())
-		if math.Abs(l.direction) > math.Abs(l.par.cans[len(l.par.cans)-1].Diff()) {
-			l.checkTem()
-		}
-		return
-	}else{
-		//if l.splitID == 0 {
-		//	return
-		//}
-		//e := NewNode(l.cans[:(l.splitID+1)])
-		//e_ := NewNode(l.cans[l.splitID:])
-		////dis := e_.Val() > e.Val()
-		//if  math.Abs(e_.Diff()) >math.Abs(e.Diff()) {
-		////if (e_.Val() > e.Val()) != (self.Dis) {
-		//	//fmt.Println(self.Stats,self.Dis,e_.Diff(),e.Diff())
-		//	l.checkTem()
-		//}
-		return
-	}
-
-}
 func (self *Temple) SetStats(){
 	self.Stats++
 }
-func (self *Temple) Save(){
-	return
-	na := self.can.Name()
-	k := make([]byte,8)
-	binary.BigEndian.PutUint64(k,uint64(self.can.LastTime()))
-	var buf bytes.Buffer
-	err := gob.NewEncoder(&buf).Encode(self)
-	if err != nil {
-		panic(err)
-	}
-
-	_db,err := bolt.Open(fmt.Sprintf("temple_%s.db",na),0600,nil)
-	if err != nil {
-		panic(err)
-	}
-	err = _db.Update(func(t *bolt.Tx)error{
-		b,err := t.CreateBucketIfNotExists([]byte(na))
-		if err != nil {
-			return err
-		}
-		return b.Put(k,buf.Bytes())
-	})
-	if err != nil {
-		panic(err)
-	}
-	_db.Close()
-
-}
-
 type Layer struct{
 	cans []Element
 	direction float64
@@ -151,6 +38,7 @@ type Layer struct{
 	ca *Cache
 	tem  *Temple
 	splitID int
+	isF bool
 	//sync.Mutex
 }
 
@@ -163,14 +51,13 @@ func NewLayer(ca *Cache) (L *Layer) {
 	return L
 }
 
-func (self *Layer)checkTemStop(){
-	if math.Abs(self.direction) < math.Abs(self.par.cans[len(self.par.cans)-1].Diff()){
-		return
-	}
-	self.checkTem()
-}
-
 func (self *Layer) checkTem() (isok bool) {
+	//if self.tem.Stats <1 {
+	//	return
+	//}
+	//if self.splitID==0{
+	//	return
+	//}
 	c_ := self.getLast()
 
 	//if self.tag ==1 {
@@ -208,7 +95,7 @@ func (self *Layer) checkTem() (isok bool) {
 				Count[t][5] -= math.Abs(dis_)
 			}
 			//Count[t][self.tem.Stats]++
-			//fmt.Println(self.tem.Stats,Count[t],c_.Time() - self.tem.can.Time())
+			fmt.Println(Count[t],c_.Time() - self.tem.can.Time())
 		//}
 	//}
 
@@ -298,27 +185,27 @@ func (self *Layer) isTem() *Layer {
 }
 
 func (self *Layer) getTemplate(dis bool){
-	if (self.par == nil) {
-		return
-	}
-	if (self.par.direction ==0 ) {
-		return
-	}
-	if (self.par.direction>0) == (self.direction<0){
-		return
-	}
+	//if (self.par == nil) {
+	//	return
+	//}
+	//if (self.par.direction ==0 ) {
+	//	return
+	//}
+	//if (self.par.direction>0) == (self.direction<0){
+	//	return
+	//}
 	//if (self.par.splitID!=0){
 	//	return
 	//}
 
-	diff_ := self.par.GetAmplitude(self.direction>0)
-	var sum float64
-	for _,c := range self.cans {
-		sum += c.Max() - c.Min()
-	}
-	if diff_ < sum/float64(len(self.cans)){
-		return
-	}
+	//diff_ := self.par.GetAmplitude(self.direction>0)
+	//var sum float64
+	//for _,c := range self.cans {
+	//	sum += c.Max() - c.Min()
+	//}
+	//if diff_ < sum/float64(len(self.cans)){
+	//	return
+	//}
 
 	//if math.Abs(self.direction)/(e.Max()-e.Min())<2{
 	//	return
@@ -328,9 +215,9 @@ func (self *Layer) getTemplate(dis bool){
 	//	return
 	//}
 
-	if ( math.Abs(self.direction) < diff_ ) {
-		return
-	}
+	//if ( math.Abs(self.direction) < diff_ ) {
+	//	return
+	//}
 	//diff_ = math.Abs(self.direction)
 	L := self.ca.L.isTem()
 	if L != nil{
@@ -418,41 +305,26 @@ func (self *Layer) runChan(){
 	for{
 		//self.Lock()
 		self.baseAdd(<-self.canChan)
-		//self.add(<-self.canChan)
+		//self.add_(<-self.canChan)
 		//self.Unlock()
 	}
 
 }
-
-//func (self *Layer) _baseAdd(e Element){
-//	if e== nil {
-//		self.par = nil
-//		self.cans = nil
-//		return
-//	}
-//	self.add(e)
-//}
 func (self *Layer) baseAdd(e Element){
 	if e == nil {
-		//if self.par != nil &&  self.par.tem != nil{
-		//	self.par.checkTem()
-		//}
-		//CloseInsOrder(self.getLast())
-		//self.ca.Order.Update(3,self.getLast())
-		//c:= self.ca.GetLast().(*Candle)
-		//if self.ca.Order != nil {
-		//	self.ca.Order.SendCloseOrder(c,self.ca)
-		//}
-		//self.ca.EachOrder(func(o *InsOrder)bool{
-		//	o.SendCloseOrder(c,self.ca)
-		//	return true
-		//})
-		//self.ca.Order.SendCloseOrder(self.getLast())
-		self.par = nil
-		self.cans = nil
+		if len(self.cans)>1{
+			if self.par == nil {
+				self.setPar()
+			}
+			self.par.add_1(NewNode(self.cans))
+			//self.par.baseAdd(NewNode(self.cans))
+			self.cans = nil
+			//fmt.Println("___________________")
+		}
+		//self.cans = nil
+		//self.par = nil
 		return
 	}
-
 	//if !config.Conf.IsTrader{
 		//self.CheckPL(e)
 		//self.CheckSL(e)
@@ -475,32 +347,33 @@ func (self *Layer) baseAdd(e Element){
 		return
 	}
 	if self.par == nil {
-		self.par = &Layer{
-			ca:self.ca,
-			child:self,
-		}
-		self.par.tag = self.tag+1
+		self.setPar()
 	}
-	//fmt.Println("in----------->",le)
-	if le==1 {
-		self.par.add(self.cans[0])
-	}else{
-		self.par.add(NewNode(self.cans[:le]))
-	}
+	self.par.add_1(NewNode(self.cans[:le]))
 	self.cans = []Element{e}
 	e.SetDiff(0)
 	//self.cans=nil
 
 }
 func (self *Layer) Add(e Element){
+
+	if e.Val() == 0 {
+		//panic(0)
+		//fmt.Println(e)
+		return
+	}
+	//if e.Min() == e.Max() {
+	//	fmt.Println(e)
+	//	panic(0)
+	//	return
+	//}
 	if self.lastEl !=nil {
 		//end := time.Unix(e.LastTime(),0).Day()
 		//begin := time.Unix(self.lastEl.LastTime(),0).Day()
-
 		dl := e.LastTime() -  self.lastEl.LastTime()
-		//if dl <0 || dl>2 {
+		//if dl <0 || dl>60 {
 		//if (dl < 0)  || (end!=begin) {
-		if (dl < 0)  || (dl>3600*2) {
+		if (dl < 0)  || (dl>60) {
 			//fmt.Println("timeOut",dl,self.lastEl.Val(),e.Val())
 			//if self.par == nil || self.par.tem == nil {
 			if self.ca.Order == nil {
@@ -517,18 +390,12 @@ func (self *Layer) Add(e Element){
 func (self *Layer) initAdd (c Element){
 
 	le := len(self.cans)
-
-	//self.cans = append(self.cans,c)
-	//if le < 3 {
-	//	return
-	//}
 	if le >0 {
 		last := self.cans[le-1]
 		if (last.Diff()>0)== (c.Diff()>0){
 			c = MergeElement(last,c)
 			le--
 			self.cans[le] = c
-
 			//self.sum =self.sum- (last.Max()-last.Min())+(c.Max()-c.Min())
 			self.sum=self.sum-math.Abs(last.Diff()) + math.Abs(c.Diff())
 			//self.sum  += c.Max()-c.Min()
@@ -537,7 +404,6 @@ func (self *Layer) initAdd (c Element){
 			self.sum  += math.Abs(c.Diff())
 			self.cans = append(self.cans,c)
 		}
-		//le--
 	}else{
 		self.sum  += c.Max()-c.Min()
 		self.cans = append(self.cans,c)
@@ -567,6 +433,30 @@ func (self *Layer) initAdd (c Element){
 	}
 
 }
+func (self *Layer)Check(){
+	var sum,n int64
+	var cov,vcov,val float64
+	for _,c := range self.par.cans{
+		if (c.Diff()>0) == (self.direction>0) {
+			continue
+		}
+		sum += c.Dur()
+		val += math.Abs(c.Diff())
+		n++
+	}
+	sum /= n
+	val /= float64(n)
+	for _,c := range self.par.cans{
+		if (c.Diff()>0) == (self.direction>0) {
+			continue
+		}
+		cov += math.Pow(float64(c.Dur()-sum),2)
+		vcov += math.Pow(math.Abs(c.Diff())-val,2)
+	}
+	cov = math.Sqrt(cov/float64(n))
+	vcov = math.Sqrt(vcov/float64(n))
+	fmt.Println(cov,sum,vcov,val,self.direction,self.par.direction,n,len(self.par.cans))
+}
 
 func (self *Layer)CheckSL(e Element) {
 	if self.tem == nil {
@@ -574,12 +464,12 @@ func (self *Layer)CheckSL(e Element) {
 			self.par.CheckSL(e)
 		}
 	}else{
-		if self.tem.Stats != -1 {
+		//if self.tem.Stats != -1 {
 		if (e.Val()<self.tem.long) == self.tem.Dis {
 			self.checkTem()
 			return
 		}
-		}
+		//}
 	}
 }
 func (self *Layer)CheckPL(e Element) {
@@ -634,6 +524,243 @@ func (self *Layer) GetAmplitude(dis bool) float64 {
 	}
 	return sum/n
 }
+func (self *Layer) add_init(c Element) {
+
+	le := len(self.cans)
+	self.cans = append(self.cans,c)
+	if le == 0 {
+		return
+	}
+	//self.direction  = c.Val() - self.cans[0].Val()
+	//self.splitID = le
+
+	var sum,maxAbs,max,dif,difAbs float64
+	sum = c.Max() - c.Min()
+	var I int
+	for i,c_ := range self.cans[:le]{
+		sum += c_.Max()-c_.Min()
+		dif = c.Val() - c_.Val()
+		difAbs = math.Abs(dif)
+		if maxAbs < difAbs {
+			max = dif
+			maxAbs = difAbs
+			I = i
+		}
+	}
+	if sum/float64(le+1) > maxAbs {
+		return
+	}
+	self.direction = max
+	self.cans = self.cans[I:]
+	self.splitID = len(self.cans)-1
+
+	//fmt.Println(self.tag,I,self.splitID)
+
+}
+func (self *Layer)split() bool {
+
+	if len(self.cans) == 1 {
+		return false
+	}
+	if self.par == nil {
+		self.setPar()
+	}
+	n := NewNode(self.cans[:self.splitID+1])
+	self.par.add_(n)
+	self.cans = self.cans[self.splitID:]
+	c := self.cans[0]
+	var maxAbs,d,dAbs float64
+	self.splitID = 0
+	dir:= self.direction
+	self.direction = 0
+	for i,c_ := range self.cans[1:]{
+		d = c_.Val() - c.Val()
+		dAbs = math.Abs(d)
+		if maxAbs <= dAbs{
+			self.direction = d
+			maxAbs = dAbs
+			self.splitID = i+1
+		}
+	}
+	fmt.Printf(
+		"%s %d %d %d %d %d %t %.0f %.0f %.0f\r\n",
+		time.Unix(c.Time(),0),
+		len(n.Eles),
+		self.splitID,
+		len(self.cans),
+		n.Dur(),
+		self.tag,
+		self.isF,
+		dir,
+		self.direction,
+		self.par.direction,
+
+	)
+	return true
+
+	//N_ := NewNode(self.par.cans)
+	//sum := math.Abs(N_.Diff()/float64(N_.Dur()))
+	//var cov float64
+	//for _,c_ := range self.par.cans {
+	//	o := math.Pow(sum - math.Abs(c_.Diff()/float64(c_.Dur())),2)
+	//	fmt.Println(o,sum)
+	//	cov+=o
+	//}
+	//cov = math.Sqrt( cov/float64(len(self.par.cans)))
+	//fmt.Println(time.Unix(c.Time(),0),self.splitID,len(self.cans),self.tag,self.isF,dir,self.direction,self.par.direction,cov,sum)
+
+}
+
+func (self *Layer)getDir() float64 {
+	if self.par == nil {
+		return self.direction
+	}
+	return self.par.getDir()
+}
+func (self *Layer) setPar(){
+	self.par = &Layer{
+		ca:self.ca,
+		child:self,
+		tag:self.tag+1,
+	}
+	fmt.Println(self.par.tag)
+
+}
+func (self *Layer) add_(c Element) {
+	if c == nil {
+		if len(self.cans)>0{
+			for{
+				if !self.split(){
+					break
+				}
+			}
+			self.cans = nil
+		}
+		self.direction = 0
+
+		//self.par = nil
+		//self.cans = nil
+		//self.direction = 0
+		fmt.Println("_________")
+		return
+	}
+	if self.direction == 0 {
+		self.add_init(c)
+		return
+	}
+	le := len(self.cans)
+	self.cans = append(self.cans,c)
+
+	d := c.Val() - self.cans[0].Val()
+	self.isF = false
+	if ((d>0)==(self.direction>0)) {
+		if (math.Abs(d)>math.Abs(self.direction)){
+			self.splitID = le
+			self.direction = d
+			return
+		}else{
+			N1 := NewNode(self.cans[:self.splitID+1])
+			N2 := NewNode(self.cans[self.splitID:])
+			t1 := float64(N1.Dur())
+			t2 := float64(N2.Dur())
+			t_ := t1 + t2
+			t1 /= t_
+			t2 /= t_
+			d1 := math.Abs(N1.Diff())
+			d2 := math.Abs(N2.Diff())
+			d_ := d1 + d2
+			d1 /= d_
+			d2 /= d_
+			p1 := math.Sqrt(math.Pow(t1,2)+math.Pow(d1,2))
+			p2 := math.Sqrt(math.Pow(t2,2)+math.Pow(d2,2))
+			if  p1 > p2 {
+				return
+			}else{
+				//fmt.Println(t1,t2,d1,d2,p1,p2)
+				fmt.Println(N1.Dur(),N2.Dur(),N1.Diff(),N2.Diff())
+				self.isF = true
+			}
+		}
+	}
+
+	self.split()
+
+}
+
+func (self *Layer) add_1(c Element) {
+	self.cans = append(self.cans,c)
+	n1 := NewNode(self.cans)
+	if math.Abs(self.direction) <= math.Abs(n1.Diff()){
+		self.direction = n1.Diff()
+		self.splitID = len(self.cans)-1
+		return
+	}
+	//var v float64
+	//fmt.Println(c.Val(),n1.Val())
+	if n1.Diff()>0{
+		//if c.Min() > n1.Val(){
+		if c.Val() > n1.Val(){
+			return
+		}
+	}else{
+		//if c.Max() < n1.Val(){
+		if c.Val() < n1.Val(){
+			return
+		}
+	}
+	//fmt.Println(c)
+	//self.split()
+	C:=self.cans[0]
+	var diffAbs,maxAbs float64
+	var I int
+	for i,c_ := range self.cans[1:]{
+		//diff = c_.Val() - C.Val()
+		diffAbs = math.Abs(c_.Val() - C.Val())
+		if diffAbs > maxAbs {
+			I = i+1
+			//max = diff
+			//self.direction = diff
+			maxAbs = diffAbs
+		}
+	}
+	//if I==0 {
+	//	fmt.Println("--",len(self.cans))
+	//	panic(0)
+	//	return
+	//}
+	if self.par == nil {
+		self.setPar()
+	}
+	n_0 := NewNode(self.cans[:I+1])
+	self.par.add_1(n_0)
+	self.cans = self.cans[I:]
+	self.direction = c.Val() - self.cans[0].Val()
+	if self.tag == 1 {
+		self.Check_1()
+	}
+
+	//if len(self.cans)==1{
+	//	panic(1)
+	//}
+	//if len(self.cans)>1{
+	//n_1 := NewNode(self.cans)
+	//if self.par.direction>0{
+	//if (self.direction>0) == (n_0.Diff()>0){
+	//	panic(0)
+	//}
+	//fmt.Printf("%d %10.2f %5d %5d %5d %10.2f %10.2f\r\n",self.tag,self.par.direction,len(self.par.cans),len(self.cans),len(n_0.Eles),self.direction,n_0.Diff())
+	//}
+	//}
+
+	//if len(self.par.cans)>1{
+	//	st := ""
+	//	for _,n := range self.par.cans {
+	//		st =fmt.Sprintf("%s %.2f",st, n.Diff())
+	//	}
+	//	//fmt.Println(st,self.tag,self.par.direction)
+	//}
+
+}
 
 func (self *Layer) add(c Element) bool {
 
@@ -682,38 +809,46 @@ func (self *Layer) add(c Element) bool {
 		}
 	}
 
-	if (self.splitID > 0) &&
-	//if (self.tag == 1) &&
-	//(self.par != nil) &&
-	//(self.par.direction !=0 ) &&
-	(self.tem == nil) {
-	//self.CheckSplit() &&
-	//self.par.CheckCansLong(self.direction<0) &&
-	//(self.par.direction>0) == (self.direction>0) &&
-	//(self.par.splitID!=0) &&
-	//math.Abs(self.par.cans[len(self.par.cans)-1].Diff())>math.Abs(self.direction)&&
-	//(math.Abs(self.direction) > self.par.GetAmplitude(self.direction>0)) {
-		self.getTemplate(self.direction<0)
-	}
 
-	//if self.tem != nil {
-	//	self.tem.Check(self)
+
+
+	//if (self.tem == nil) {
+	//	self.getTemplate(self.direction<0)
+	//}else{
+	//	self.checkTem()
 	//}
+
 
 	if self.splitID == 0 {
 		return false
 	}
-	sumv := self.sum/float64(len(self.cans))
-	if sumv > absMaxD {
-		return false
+	dir := math.Abs(self.direction)
+	isP := false
+	if absMaxD < dir {
+		p1 := math.Sqrt(math.Pow(float64(self.cans[self.splitID].LastTime()-self.cans[0].Time()),2) +math.Pow(dir,2))
+		p2 := math.Sqrt(math.Pow(float64(c.LastTime() - self.cans[self.splitID].Time()),2)+math.Pow(absMaxD,2))
+		if  p1 > p2 {
+			return false
+		}else{
+		//if self.par != nil {
+			isP = true
+			//if (self.tem == nil) {
+			//	self.getTemplate(self.direction<0)
+		//	}else{
+		//		self.checkTem()
+			//}
+			//fmt.Println(self.direction,maxD,self.par.direction,len(self.cans),self.tag)
+		//}
+		}
 	}
-
-	//fmt.Println(sumv,absMaxD)
-	//fmt.Println(maxD)
-	//dir := self.direction
-
+	//sumv := self.sum/float64(len(self.cans))
+	//if sumv > absMaxD {
+	//	return false
+	//}
+	//if self.par != nil {
+	//	fmt.Println(self.direction,maxD,self.par.direction,len(self.cans),self.tag)
+	//}
 	self.direction = maxD
-	//var e1 Element = nil
 	if self.par == nil {
 		tag := self.tag+1
 		//if tag <4{
@@ -724,56 +859,53 @@ func (self *Layer) add(c Element) bool {
 			tag:tag,
 		}
 		//}
-		//self.par.tag = self.tag+1
-	//}else{
-	//	e1 = self.par.cans[len(self.par.cans)-1]
 	}
 
-	if self.tem != nil {
-		if self.tem.Stats != -1 {
-			self.checkTem()
-		}
-		self.tem = nil
-	}
-	if self.par != nil {
-
-		//e := NewNode(self.cans[:self.splitID+1])
-		//if self.tem != nil &&
-		//!self.tem.Check1(e,self.par.cans[len(self.par.cans)-1]){
-		//	//if (c.Val()<self.tem.lcan.Val()) == self.tem.Dis {
-		//	self.checkTem()
-		//	//}
-		//}
-		self.par.add(NewNode(self.cans[:self.splitID+1]))
-	}
-
+	self.par.add(NewNode(self.cans[:self.splitID+1]))
 	self.cans = self.cans[self.splitID:]
+	if self.tem != nil {
+		//self.tem.SetStats()
+		self.checkTem()
+	}else if isP {
+		self.getTemplate(self.direction<0)
+	}
 	self.sum = 0
 	for _,_c := range self.cans{
 		self.sum += math.Abs(_c.Diff())
 		//self.sum  += _c.Max()-_c.Min()
 	}
-	//if self.tag == 1 {
-		//isU:= true
-		//if self.tem != nil  {
-			//isU = self.checkTem()
-			//if self.tem.Stats >=0{
-				//self.checkTem()
-				//self.tem.SetStats()
-				//self.tem.Check(self)
-			//}else{
-			//	self.tem = nil
-			//}
-		//}
-		//if isU{
-		//if self.par.direction!=0 &&
-		//(self.par.direction>0) == (self.direction>0)&&
-		//(self.par.direction>0) != (self.direction<0){
-		//if math.Abs(dir) > absMaxD {
-		//if (e1 != nil) &&
-		//(e.Val() > e1.Val()) == (self.direction<0){
-		//}
-	//}
+
 	return true
 
+}
+func (self *Layer)CheckPar(isF bool) bool {
+	if (self.direction>0) != isF {
+		return false
+	}
+	if self.splitID != len(self.cans)-1 {
+		return false
+	}
+	if self.par == nil {
+		return true
+	}
+	return self.par.CheckPar(isF)
+}
+
+func (self *Layer)Check_1(){
+	if self.tem != nil {
+		//if (self.par.direction>0) != self.tem.Dis  {
+		if (len(self.par.cans) - self.par.splitID >2) {
+			self.checkTem()
+		}
+		return
+	}
+	if self.par == nil {
+		return
+	}
+	isF := self.direction<0
+	if !self.par.CheckPar(isF){
+		return
+	}
+	fmt.Printf("%d %10.2f %5d %5d %10.2f\r\n",self.tag,self.par.direction,len(self.par.cans),len(self.cans),self.direction)
+	self.getTemplate(isF)
 }

@@ -1,6 +1,7 @@
 package cache
 import(
 	//"io"
+	//"fmt"
 )
 type Element interface{
 	Diff() float64
@@ -47,11 +48,24 @@ func NewNode(eles []Element) (n *Node) {
 		Time_ :b.Time(),
 		LastTime_:e.LastTime(),
 	}
+	var e_ Element
 	for _,e := range eles{
 		n.Val_ += e.Val()
+		d := e.LastTime() - e.Time()
+		if d == 0 {
+			if e_ != nil {
+				d = e.LastTime() - e_.LastTime()
+			}
+		}
+		n.Dur_ += d
+		e_ = e
 	}
+	//if n.Dur_ == 0 {
+	//	n.Dur_ = 1
+	//}
 	n.Val_ /= float64(len(eles))
-	n.Dur_ = n.LastTime_ - n.Time_
+	//fmt.Println(n.Dur_,n.Val_)
+	//n.Dur_ = n.LastTime_ - n.Time_
 	return n
 }
 

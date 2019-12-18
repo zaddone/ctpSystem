@@ -405,7 +405,7 @@ func StoreCache(info map[string]string) (c *Cache) {
 				break
 			}
 		}
-		if isAdd {
+		if !isAdd {
 			return
 		}
 	}

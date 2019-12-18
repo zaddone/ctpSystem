@@ -1,14 +1,14 @@
 Port = ":8080"
 Static = "static"
 Templates = "templates"
-DbPath = "/data/ctpdb"
+DbPath = "ctpdb"
 TPath = "/data/ctpdbT"
 MdServer = "mdServer/build/mdServer"
 TrServer = "traderServer/build/traderServer"
 Weight = 4
 IsTrader = false
 DefaultUser = "150797"
-Example = ["I","ni"]
+Example = ["AP"]
 
 [User]
   [User.153985]
