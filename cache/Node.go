@@ -14,6 +14,7 @@ type Element interface{
 	Name() string
 	Max() float64
 	Min() float64
+	SetDur(d int64)
 }
 type Node struct {
 	Eles []Element
@@ -48,27 +49,21 @@ func NewNode(eles []Element) (n *Node) {
 		Time_ :b.Time(),
 		LastTime_:e.LastTime(),
 	}
-	var e_ Element
 	for _,e := range eles{
-		n.Val_ += e.Val()
-		d := e.LastTime() - e.Time()
-		if d == 0 {
-			if e_ != nil {
-				d = e.LastTime() - e_.LastTime()
-			}
-		}
-		n.Dur_ += d
-		e_ = e
+		n.Val_ += e.Val()*float64(e.Dur())
+		n.Dur_ += e.Dur()
 	}
-	//if n.Dur_ == 0 {
-	//	n.Dur_ = 1
-	//}
-	n.Val_ /= float64(len(eles))
+
+	n.Val_ /= float64(n.Dur())
+	//fmt.Println(n.Val_)
 	//fmt.Println(n.Dur_,n.Val_)
 	//n.Dur_ = n.LastTime_ - n.Time_
 	return n
 }
 
+func (self *Node) SetDur(d int64) {
+	self.Dur_ = d
+}
 func (self *Node) Min() float64{
 	if self.Diff_>0 {
 		return self.Eles[0].Min()
