@@ -51,8 +51,7 @@ func runRead(ca *cache.Cache) {
 	if err != nil {
 		panic(err)
 	}
-	ca.L = nil
-	ca.DB.Close()
+	ca.Clear()
 
 }
 

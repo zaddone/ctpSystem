@@ -106,14 +106,17 @@ func (self *Layer) isTem() *Layer {
 
 func (self *Layer) getTemplate(dis bool){
 
-	//L := self.ca.L.isTem()
-	//if L != nil{
-	//	if L.tag < self.tag {
-	//		self.tem = L.tem
-	//		L.tem = nil
-	//	}
-	//	return
-	//}
+	if self.ca.L == nil {
+		return
+	}
+	L := self.ca.L.isTem()
+	if L != nil{
+		if L.tag < self.tag {
+			self.tem = L.tem
+			L.tem = nil
+		}
+		return
+	}
 	//self.getNormalization(dis)
 	self.tem = &Temple{Dis:dis}
 	self.tem.can  = self.getLast()
@@ -125,8 +128,9 @@ func (self *Layer) getTemplate(dis bool){
 }
 
 func (self *Layer) runChan(){
-	for{
-		self.baseAdd(<-self.canChan)
+	for c := range self.canChan{
+	//for{
+		self.baseAdd(c)
 		//self.add_(<-self.canChan)
 	}
 
@@ -178,6 +182,10 @@ func (self *Layer) Add(e Element){
 	if e.Val() == 0 {
 		return
 	}
+	if e.Max()==e.Min() {
+		panic(0)
+		return
+	}
 	if self.lastEl !=nil {
 		dl := e.LastTime() -  self.lastEl.LastTime()
 		if (dl < 0)  || (dl>300) {
@@ -186,6 +194,7 @@ func (self *Layer) Add(e Element){
 	}
 	self.canChan <- e
 	self.lastEl = e
+
 }
 func (self *Layer) setPar(){
 	self.par = &Layer{
@@ -193,17 +202,17 @@ func (self *Layer) setPar(){
 		child:self,
 		tag:self.tag+1,
 	}
-	//fmt.Println(self.par.tag)
+	fmt.Println(self.par.tag)
 }
 func (self *Layer) add_1(c Element) {
 
 	self.cans = append(self.cans,c)
-	if len(self.cans)<3{
-		return
-	}
+	//if len(self.cans)<3{
+	//	return
+	//}
 
 	//if self.tag == 1 {
-		self.Check(c)
+	self.Check(c)
 	//self.CheckEnd()
 	//}
 	n1 := NewNode(self.cans)
@@ -313,9 +322,12 @@ func (self *Layer) Check(e Element){
 	if self.par == nil {
 		return
 	}
-	if (self.direction>0) == (self.par.direction>0){
+	if self.par.direction==0{
 		return
 	}
+	//if (self.direction>0) == (self.par.direction>0){
+	//	return
+	//}
 	//c := self.cans[len(self.cans)-1]
 	//if (c.Max()-c.Min())*2 > math.Abs(self.direction) {
 	//	return

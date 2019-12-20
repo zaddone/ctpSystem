@@ -257,6 +257,11 @@ type Cache struct {
 	//IsAdd bool
 	//DBT *bolt.DB
 }
+func (self *Cache) Clear(){
+	self.DB.Close()
+	close(self.L.canChan)
+	self.L = nil
+}
 func (self *Cache) AddOrder(dis bool,stop Element){
 	if self.Order != nil {
 		return
