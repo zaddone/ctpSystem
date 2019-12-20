@@ -196,10 +196,10 @@ func (self *Layer) Add(e Element){
 	self.lastEl = e
 
 }
-func (self *Layer) setPar() bool {
+func (self *Layer) setPar() {
 
 	if self.tag>10{
-		return false
+		return
 	}
 	self.par = &Layer{
 		ca:self.ca,
