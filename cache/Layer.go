@@ -198,6 +198,9 @@ func (self *Layer) setPar(){
 func (self *Layer) add_1(c Element) {
 
 	self.cans = append(self.cans,c)
+	if len(self.cans)<3{
+		return
+	}
 
 	//if self.tag == 1 {
 		self.Check(c)
