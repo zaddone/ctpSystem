@@ -193,16 +193,16 @@ func (self *Layer) setPar(){
 		child:self,
 		tag:self.tag+1,
 	}
-	fmt.Println(self.par.tag)
+	//fmt.Println(self.par.tag)
 }
 func (self *Layer) add_1(c Element) {
 
 	self.cans = append(self.cans,c)
 
-	if self.tag == 1 {
+	//if self.tag == 1 {
 		self.Check(c)
 	//self.CheckEnd()
-	}
+	//}
 	n1 := NewNode(self.cans)
 	if math.Abs(self.direction) <= math.Abs(n1.Diff()){
 		self.direction = n1.Diff()
