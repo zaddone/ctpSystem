@@ -54,8 +54,7 @@ func NewLayer(ca *Cache) (L *Layer) {
 func (self *Layer) checkTem() (isok bool) {
 
 	c_ := self.getLast()
-
-	t := 0
+	t  := 0
 	var Diff float64
 	if self.tem.Dis {
 		Diff = c_.Min() - self.tem.can.Max()
@@ -197,9 +196,13 @@ func (self *Layer) setPar(){
 	fmt.Println(self.par.tag)
 }
 func (self *Layer) add_1(c Element) {
+
 	self.cans = append(self.cans,c)
 
-
+	if self.tag == 1 {
+		self.Check(c)
+	//self.CheckEnd()
+	}
 	n1 := NewNode(self.cans)
 	if math.Abs(self.direction) <= math.Abs(n1.Diff()){
 		self.direction = n1.Diff()
@@ -236,49 +239,85 @@ func (self *Layer) add_1(c Element) {
 	self.par.add_1(n_0)
 	self.cans = self.cans[I:]
 	self.direction = c.Val() - self.cans[0].Val()
-	if self.tem != nil {
-		if self.tem.Stats==1{
-			self.checkTem()
-		}else{
-			self.tem.SetStats()
-		}
-		//return
-	}
-	if self.tag == 1 {
-		self.Check()
-	//self.CheckEnd()
-	}
+	self.CheckEnd()
+	//if self.tem != nil {
+	//	if self.tem.Stats==1{
+	//		self.checkTem()
+	//	}else{
+	//		self.tem.SetStats()
+	//	}
+	//	//return
+	//}
+
 
 	//fmt.Printf("%d %10.2f %5d %5d %5d %10.2f %10.2f\r\n",self.tag,self.par.direction,len(self.par.cans),len(self.cans),len(n_0.Eles),self.direction,n_0.Diff())
 
 }
 func (self *Layer) CheckEnd(){
-	if self.tem == nil{
-		return
-	}
-	if self.tem.Stats >1 {
-		if math.Abs(self.direction)>math.Abs(self.par.cans[len(self.par.cans)-1].Diff()){
-			self.checkTem()
-		}
+	if self.tem == nil {
 		return
 	}
 
-}
-func (self *Layer) Check(){
-	if self.tem != nil {
-		self.checkTem()
-		//self.tem.SetStats()
+	if self.tem.Stats==0{
+		self.tem.SetStats()
 		return
+	}
+
+	if math.Abs(self.direction)>math.Abs(self.par.cans[len(self.par.cans)-1].Diff()) != self.tem.Dis {
+		self.checkTem()
+	}
+
+}
+func (self *Layer) Check_1(e Element)bool{
+	no := NewNode(self.cans)
+	diff := math.Abs(e.Val() - no.Val())
+	var sum,dur float64
+	for _,c := range self.cans {
+		d := float64(c.Dur())
+		sum += (c.Max() -  c.Min())*d
+		dur += d
+	}
+	sum/=dur
+	if diff>sum{
+		//fmt.Println(diff,sum)
+		return true
+	}
+	return false
+}
+func (self *Layer) Check(e Element){
+	if self.tem != nil {
+		if self.tem.Stats <1{
+			return
+		}
+		c_:= self.getLast()
+		var Diff float64
+		if self.tem.Dis {
+			Diff = c_.Min() - self.tem.can.Max()
+		}else{
+			Diff = c_.Max() - self.tem.can.Min()
+		}
+		if self.tem.Dis == (Diff>0){
+			self.checkTem()
+		}
+
+		//if (self.getLast().Val() > self.tem.can.Val()) == self.tem.Dis{
+		//	fmt.Println("_______")
+		//	self.checkTem()
+		//}
+		return
+		//self.tem.SetStats()
 	}
 	if self.par == nil {
 		return
 	}
-	//if (self.direction>0) == (self.par.direction>0){
-	//	return
-	//}
-	c := self.cans[len(self.cans)-1]
-	if (c.Max()-c.Min())*2 > math.Abs(self.direction) {
+	if (self.direction>0) == (self.par.direction>0){
 		return
 	}
+	//c := self.cans[len(self.cans)-1]
+	//if (c.Max()-c.Min())*2 > math.Abs(self.direction) {
+	//	return
+	//}
+	if self.Check_1(e){
 	self.getTemplate(self.direction<0)
+	}
 }
