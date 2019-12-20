@@ -196,7 +196,11 @@ func (self *Layer) Add(e Element){
 	self.lastEl = e
 
 }
-func (self *Layer) setPar(){
+func (self *Layer) setPar() bool {
+
+	if self.tag>10{
+		return false
+	}
 	self.par = &Layer{
 		ca:self.ca,
 		child:self,
@@ -247,8 +251,10 @@ func (self *Layer) add_1(c Element) {
 	if self.par == nil {
 		self.setPar()
 	}
-	n_0 := NewNode(self.cans[:I+1])
-	self.par.add_1(n_0)
+	if self.Par != nil{
+		n_0 := NewNode(self.cans[:I+1])
+		self.par.add_1(n_0)
+	}
 	self.cans = self.cans[I:]
 	self.direction = c.Val() - self.cans[0].Val()
 	self.CheckEnd()
