@@ -19,6 +19,7 @@ type Candle struct{
 	Bid float64
 	v float64
 	d float64
+	Dur_ int64
 	upperLimitPrice float64
 	lowerLimitPrice float64
 }
@@ -26,13 +27,17 @@ func NewCandle(ins string,date int64,db []byte) (c *Candle) {
 	c = &Candle{
 		ins:ins,
 		date:date,
+		Dur_:1,
 	}
 	err := c.decode(db)
 	if err != nil {
 		panic(err)
 	}
-	c.d = c.Ask - c.Bid
+	//c.d = c.Ask - c.Bid
 	return c
+}
+func (self *Candle)SetDur(d int64){
+	self.Dur_ = d
 }
 func (self *Candle) Max()float64{
 	return self.Ask
@@ -60,7 +65,7 @@ func (self *Candle) LastTime() int64 {
 	return self.date
 }
 func (self *Candle) Dur() int64 {
-	return 1
+	return self.Dur_
 }
 func (self *Candle) SetDiff(d float64) {
 

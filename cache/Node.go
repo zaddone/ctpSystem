@@ -1,6 +1,7 @@
 package cache
 import(
 	//"io"
+	//"fmt"
 )
 type Element interface{
 	Diff() float64
@@ -13,6 +14,7 @@ type Element interface{
 	Name() string
 	Max() float64
 	Min() float64
+	SetDur(d int64)
 }
 type Node struct {
 	Eles []Element
@@ -48,13 +50,20 @@ func NewNode(eles []Element) (n *Node) {
 		LastTime_:e.LastTime(),
 	}
 	for _,e := range eles{
-		n.Val_ += e.Val()
+		n.Val_ += e.Val()*float64(e.Dur())
+		n.Dur_ += e.Dur()
 	}
-	n.Val_ /= float64(len(eles))
-	n.Dur_ = n.LastTime_ - n.Time_
+
+	n.Val_ /= float64(n.Dur())
+	//fmt.Println(n.Val_)
+	//fmt.Println(n.Dur_,n.Val_)
+	//n.Dur_ = n.LastTime_ - n.Time_
 	return n
 }
 
+func (self *Node) SetDur(d int64) {
+	self.Dur_ = d
+}
 func (self *Node) Min() float64{
 	if self.Diff_>0 {
 		return self.Eles[0].Min()
