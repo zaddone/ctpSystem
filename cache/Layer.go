@@ -202,7 +202,7 @@ func (self *Layer) setPar(){
 		child:self,
 		tag:self.tag+1,
 	}
-	fmt.Println(self.par.tag)
+	fmt.Println(self.ca.Info["InstrumentID"],self.par.tag)
 }
 func (self *Layer) add_1(c Element) {
 
