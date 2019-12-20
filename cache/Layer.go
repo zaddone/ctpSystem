@@ -251,7 +251,7 @@ func (self *Layer) add_1(c Element) {
 	if self.par == nil {
 		self.setPar()
 	}
-	if self.Par != nil{
+	if self.par != nil{
 		n_0 := NewNode(self.cans[:I+1])
 		self.par.add_1(n_0)
 	}
