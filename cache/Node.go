@@ -14,7 +14,8 @@ type Element interface{
 	Name() string
 	Max() float64
 	Min() float64
-	SetDur(d int64)
+	SetDur(int64)
+	GetEle(int) Element
 }
 type Node struct {
 	Eles []Element
@@ -59,6 +60,9 @@ func NewNode(eles []Element) (n *Node) {
 	//fmt.Println(n.Dur_,n.Val_)
 	//n.Dur_ = n.LastTime_ - n.Time_
 	return n
+}
+func (self *Node) GetEle(i int)Element {
+	return self.Eles[i]
 }
 
 func (self *Node) SetDur(d int64) {

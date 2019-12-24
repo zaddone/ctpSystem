@@ -52,6 +52,7 @@ func runRead(ca *cache.Cache) {
 		panic(err)
 	}
 	ca.Clear()
+	//ca = nil
 
 }
 

@@ -36,6 +36,9 @@ func NewCandle(ins string,date int64,db []byte) (c *Candle) {
 	//c.d = c.Ask - c.Bid
 	return c
 }
+func (self *Candle)GetEle(i int) Element {
+	return self
+}
 func (self *Candle)SetDur(d int64){
 	self.Dur_ = d
 }

@@ -259,8 +259,12 @@ type Cache struct {
 }
 func (self *Cache) Clear(){
 	self.DB.Close()
+	l := self.L.isTem()
+	if l != nil {
+		l.checkTem()
+	}
 	close(self.L.canChan)
-	self.L = nil
+	//self.L = nil
 }
 func (self *Cache) AddOrder(dis bool,stop Element){
 	if self.Order != nil {
