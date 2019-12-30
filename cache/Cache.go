@@ -17,6 +17,7 @@ var (
 	OrderCount [6]float64
 	Order int = 1
 	CacheMap sync.Map
+	Sum [2]int
 )
 func AddCandle(c *Candle) {
 

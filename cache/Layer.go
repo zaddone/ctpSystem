@@ -38,10 +38,12 @@ type Layer struct{
 	ca *Cache
 	tem  *Temple
 	splitID int
+	splitID_old int
 	isF bool
 	//sync.Mutex
 	parCov float64
 	parSum float64
+	last *Node
 }
 func (self *Layer) getSum() {
 
@@ -130,6 +132,7 @@ func (self *Layer) getLast() Element {
 		return self.cans[len(self.cans)-1]
 	}
 }
+
 func (self *Layer) isTem() *Layer {
 	if self.tem != nil {
 		return self
@@ -217,11 +220,11 @@ func (self *Layer) baseAdd(e Element){
 		return
 	}
 	last := self.cans[le-1]
-	e.SetDiff(e.Val() - last.Val())
-	e.SetDur(e.LastTime() - last.Time())
+	//e.SetDiff(e.Val() - last.Val())
+	//e.SetDur(e.LastTime() - last.Time())
 
 	if e.Diff() == 0 {
-		e.SetDiff(last.Diff())
+		//e.SetDiff(last.Diff())
 		return
 	}
 	if last.Diff()==0 {
@@ -235,7 +238,7 @@ func (self *Layer) baseAdd(e Element){
 	}
 	self.par.add_1(NewNode(self.cans[:le]))
 	self.cans = []Element{e}
-	e.SetDiff(0)
+	//e.SetDiff(0)
 	//self.cans=nil
 
 }
@@ -249,15 +252,17 @@ func (self *Layer) Add(e Element){
 		//panic(0)
 		return
 	}
-	isOut:= false
 	if self.lastEl !=nil {
 		dl := e.LastTime() -  self.lastEl.LastTime()
 		if (dl < 0)  || (dl>300) {
+			//fmt.Println("-------------",float64(dl)/3600)
 			self.canChan<-nil
-			isOut = true
+			self.canChan <- e
+			self.lastEl = e
+			return
 		}
 	}
-	if !isOut && self.lastEl != nil {
+	if self.lastEl != nil {
 		e.SetDiff(e.Val() - self.lastEl.Val())
 		e.SetDur(e.LastTime() - self.lastEl.Time())
 	}
@@ -265,6 +270,7 @@ func (self *Layer) Add(e Element){
 	self.lastEl = e
 
 }
+
 func (self *Layer) setPar() {
 
 	if self.tag>10{
@@ -277,68 +283,120 @@ func (self *Layer) setPar() {
 	}
 	fmt.Println(self.ca.Info["InstrumentID"],self.par.tag)
 }
+
 func (self *Layer) add_1(c Element) (o bool) {
 	o = false
+	self.isF = false
 	if c == nil {
 		if len(self.cans)>1{
 			if self.par == nil {
 				self.setPar()
 			}
 			self.par.add_1(NewNode(self.cans))
-			//self.par.baseAdd(NewNode(self.cans))
 			self.cans = nil
-			self.splitID = 0
+
 		}
+		self.splitID = 0
+		self.splitID_old = 0
+		self.last = nil
 		return
 	}
-
 	self.cans = append(self.cans,c)
-	//self.CheckPL()
-	if c.Diff()==0{
-		return
-	}
-
-	//self.Check()
 	d := c.Val() - self.cans[0].Val()
-	if math.Abs(d) >=math.Abs(self.direction){
+	if math.Abs(d) >= math.Abs(self.direction){
 		self.direction = d
 		self.splitID = len(self.cans)-1
-		//if self.tem != nil &&
-		//self.tem.Dis != (self.direction>0) {
-		//	//self.par.cans[len(self.par.cans)-1].Diff()
-		//	self.getSum()
-		//	if math.Abs(self.direction) > (self.parSum+self.parCov){
-		//		self.checkTem()
-		//	}
-		//}
-
 		return
 	}
-	//n1 := NewNode(self.cans[:self.splitID+1])
-	n1 := NewNode(self.cans)
-
-	if n1.Diff()>0{
-		if c.Val() > n1.Val(){
+	self.Split(c,func(n *Node,isU bool){
+		o = true
+		if self.tag==0 {
 			return
 		}
-	}else{
-		if c.Val() < n1.Val(){
-			return
-		}
-	}
-	if self.par == nil {
-		self.setPar()
-	}
+		//if n.Dur()>1000{
+		fmt.Printf(
+			"%d %5d %10.2f %5d %5d %10.2f\r\n",
+			self.tag,
+			len(self.par.cans),
+			self.par.direction,
+			n.Dur(),
+			len(n.Eles),
+			n.Diff(),
+		)
+		//}
+	})
+	//fmt.Println(o)
 
-	n_0 := NewNode(self.cans[:self.splitID+1])
-	if self.par!= nil{
-		self.isF = self.par.add_1(n_0)
-	}
-	self.cans = self.cans[self.splitID:]
+	//n1 := NewNode(self.cans)
+	//if ((n1.Diff()>0) == (c.Val() > n1.Val())) {
+	//	return
+	//}
 
-	o = true
+	//if self.par == nil {
+	//	self.setPar()
+	//}
+	//n_0 := NewNode(self.cans[:self.splitID+1])
+	//if self.par!= nil{
+	//	self.isF = self.par.add_1(n_0)
+	//}
+	//if self.last != nil {
+	//	if (self.last.Diff()>0) == (n_0.Diff()>0){
+	//		self.last = NewNode(append(self.last.Eles,n_0.Eles[1:]...))
+	//	}else{
+	//		self.last = n_0
+	//	}
+	//}else{
+	//	self.last = n_0
+	//}
+	//self.cans = self.cans[self.splitID:]
+	////self.cans = n_1.Eles
+
+	//o = true
+	//C:=self.cans[0]
+	//var diffAbs,maxAbs,diff float64
+	//for i,c_ := range self.cans[1:]{
+	//	diff = c_.Val() - C.Val()
+	//	diffAbs = math.Abs(diff)
+	//	if diffAbs > maxAbs {
+	//		self.splitID = i+1
+	//		self.direction = diff
+	//		maxAbs = diffAbs
+	//	}
+	//}
+	//self.splitID_old = self.splitID
+
+	//if self.tag == 0 {
+	//	return
+	//}
+
+	//if self.isF  {
+	//	fmt.Println("-------")
+	//	//&& self.par.direction != 0{
+	//	//if self.tem == nil {
+	//	//	self.getTemplate(self.par.direction>0)
+	//	//}
+	//}
+	//n_2 := NewNode(self.cans)
+	//fmt.Printf(
+	//	"%d %5d %10.2f %5d %5d %10.2f %5d %10.2f %10.2f\r\n",
+	//	self.tag,
+	//	len(self.par.cans),
+	//	self.par.direction,
+	//	len(n_0.Eles),
+	//	n_0.Dur(),
+	//	n_0.Diff(),
+	//	len(self.cans),
+	//	self.direction,
+	//	//n1.Val(),
+	//	n_0.Val(),
+	//	//n_2.Val() - n_0.Val(),
+	//)
+	return
+}
+func (self *Layer)setSplitID(){
 	C:=self.cans[0]
 	var diffAbs,maxAbs,diff float64
+	self.splitID = 0
 	for i,c_ := range self.cans[1:]{
 		diff = c_.Val() - C.Val()
 		diffAbs = math.Abs(diff)
@@ -349,58 +407,44 @@ func (self *Layer) add_1(c Element) (o bool) {
 		}
 	}
 
+}
 
-	if self.tag>0{
-		fmt.Printf("%d %5d %5d %5d %10.2f %5d %10.2f\r\n",self.tag,len(self.par.cans),len(n_0.Eles),n_0.Dur(),n_0.Diff(),len(self.cans),self.direction)
+func (self *Layer) Split(c Element,hand func(*Node,bool)){
+	n1 := NewNode(self.cans)
+	if ((n1.Diff()<0) == (c.Val() > n1.Val())) {
+		np := NewNode(self.cans[:self.splitID+1])
+		hand(np,self.addPar(np))
+		self.cans = self.cans[self.splitID:]
+		self.setSplitID()
+		return
 	}
-	return
+	if len(self.cans)-self.splitID == 1 {
+		return
+	}
+	n2 := NewNode(self.cans[self.splitID:])
+	if ((n2.Diff()>0) == (c.Val() > n2.Val())) {
+		return
+	}
+	np := NewNode(self.cans[:self.splitID+1])
+	hand(np,self.addPar(np))
+	self.cans = self.cans[self.splitID:]
+	self.setSplitID()
+
+	np = NewNode(self.cans[:self.splitID+1])
+	hand(np,self.addPar(np))
+	self.cans = self.cans[self.splitID:]
+	self.setSplitID()
 
 
 }
-func (self *Layer)CheckPL(){
-	if self.tem == nil {
-		return
-	}
-	//if self.tem.Stats == 0 {
-	//	return
-	//}
-	c_ := self.getLast()
-	var Diff float64
-	if self.tem.Dis {
-		Diff = c_.Min() - self.tem.can.Max()
-	}else{
-		Diff = c_.Max() - self.tem.can.Min()
-	}
-	if self.tem.Dis == (Diff>0){
-		self.checkTem()
-	}
 
-}
-
-func (self *Layer) Check(){
-
-	if self.tem != nil {
-		return
-	}
+func (self *Layer)addPar(c Element) bool{
 	if self.par == nil {
-		return
+		self.setPar()
+		if self.par == nil {
+			return false
+		}
 	}
-	if self.par.direction==0{
-		return
-	}
-	//if (self.direction>0) == (self.par.direction>0){
-	//	if self.par.splitID+1 != len(self.par.cans){
-	//		return
-	//	}
-	//}else{
-	//	if self.par.splitID+1 == len(self.par.cans){
-	//		return
-	//	}
-	//}
-
-	if (self.parSum !=0) && (self.parSum < math.Abs(self.direction)){
-		self.getTemplate(self.direction<0)
-	}
-
-
+	return self.par.add_1(c)
 }
+

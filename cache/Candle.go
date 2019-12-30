@@ -33,7 +33,7 @@ func NewCandle(ins string,date int64,db []byte) (c *Candle) {
 	if err != nil {
 		panic(err)
 	}
-	//c.d = c.Ask - c.Bid
+	c.d = c.Ask - c.Bid
 	return c
 }
 func (self *Candle)GetEle(i int) Element {

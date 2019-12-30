@@ -45,12 +45,13 @@ func NewNode(eles []Element) (n *Node) {
 	b:=eles[0]
 	e:=eles[len(eles)-1]
 	n  = &Node{
-		Eles:eles,
+		Eles:make([]Element,0,len(eles)),
 		Diff_:e.Val() - b.Val(),
 		Time_ :b.Time(),
 		LastTime_:e.LastTime(),
 	}
 	for _,e := range eles{
+		n.Eles = append(n.Eles,e)
 		n.Val_ += e.Val()*float64(e.Dur())
 		n.Dur_ += e.Dur()
 	}
