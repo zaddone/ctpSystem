@@ -38,12 +38,12 @@ type Layer struct{
 	ca *Cache
 	tem  *Temple
 	splitID int
-	splitID_old int
-	isF bool
+	//splitID_old int
+	//isF bool
 	//sync.Mutex
 	parCov float64
 	parSum float64
-	last *Node
+	//last *Node
 }
 func (self *Layer) getSum() {
 
@@ -286,19 +286,22 @@ func (self *Layer) setPar() {
 
 func (self *Layer) add_1(c Element) (o bool) {
 	o = false
-	self.isF = false
+	//self.isF = false
 	if c == nil {
 		if len(self.cans)>1{
-			if self.par == nil {
-				self.setPar()
+			//fmt.Println("---------------")
+			if self.splitID >0{
+				self.addPar_1(NewNode(self.cans[:self.splitID]))
+				if self.splitID+1 < len(self.cans){
+					self.addPar_1(NewNode(self.cans[self.splitID:]))
+				}
 			}
-			self.par.add_1(NewNode(self.cans))
 			self.cans = nil
-
 		}
 		self.splitID = 0
-		self.splitID_old = 0
-		self.last = nil
+		self.direction = 0
+		//self.splitID_old = 0
+		//self.last = nil
 		return
 	}
 	self.cans = append(self.cans,c)
@@ -308,12 +311,64 @@ func (self *Layer) add_1(c Element) (o bool) {
 		self.splitID = len(self.cans)-1
 		return
 	}
-	self.Split(c,func(n *Node,isU bool){
+	n1:= NewNode(self.cans[:self.splitID])
+	n2:= NewNode(self.cans[self.splitID:])
+	if ((n2.Val() > n1.Val()) == (n1.Diff()<0)) ||
+	//if (math.Abs(n2.Diff()) > math.Abs(n1.Diff())) ||
+	((math.Pow(n2.Diff(),2)+math.Pow(float64(n2.Dur()),2)) > (math.Pow(n1.Diff(),2)+math.Pow(float64(n1.Dur()),2))){
 		o = true
-		if self.tag==0 {
+		
+		if self.addPar_1(n1){
+			//if self.tag > 0 {
+				//fmt.Printf("%d %7d %10.2f %7d %10.2f\r\n",self.tag,n1.Dur(),n1.Diff(),n2.Dur(),n2.Diff())
+			//}
+			//fmt.Printf("%d %10.2f %7d %10.2f %7d %10.2f\r\n",self.tag,self.par.direction,n1.Dur(),n1.Diff(),n2.Dur(),n2.Diff())
+			//fmt.Println("--------")
+		}
+		self.setSplitID()
+		if self.tag == 0 {
 			return
 		}
-		//if n.Dur()>1000{
+			//fmt.Printf("%d %7d %10.2f %7d %10.2f\r\n",self.tag,n1.Dur(),n1.Diff(),n2.Dur(),n2.Diff())
+		if self.par != nil {
+			fmt.Printf("%d %10.2f %7d %10.2f %7d %10.2f %10.2f\r\n",self.tag,self.par.direction,n1.Dur(),n1.Diff(),n2.Dur(),n2.Diff(),self.direction)
+		}
+		return
+	}
+	return
+}
+func (self *Layer) _add_1(c Element) (o bool) {
+	o = false
+	//self.isF = false
+	if c == nil {
+		if len(self.cans)>1{
+			self.addPar_1(NewNode(self.cans))
+			self.cans = nil
+		}
+		self.splitID = 0
+		return
+	}
+	self.cans = append(self.cans,c)
+	if len(self.cans)==1{
+		return
+	}
+	d := c.Val() - self.cans[0].Val()
+	if math.Abs(d) >= math.Abs(self.direction){
+		self.direction = d
+		self.splitID = len(self.cans)-1
+		return
+	}
+	U:= false
+	self.Split(c,func(n *Node,isU bool){
+		o = true
+		//if self.tag==0 {
+		//	return
+		//}
+		if !U{
+			U = isU
+		}
+		return
+		if n.Dur()>1000{
 		fmt.Printf(
 			"%d %5d %10.2f %5d %5d %10.2f\r\n",
 			self.tag,
@@ -323,80 +378,33 @@ func (self *Layer) add_1(c Element) (o bool) {
 			len(n.Eles),
 			n.Diff(),
 		)
-		//}
+		}
 	})
-	//fmt.Println(o)
-
-	//n1 := NewNode(self.cans)
-	//if ((n1.Diff()>0) == (c.Val() > n1.Val())) {
-	//	return
-	//}
-
-	//if self.par == nil {
-	//	self.setPar()
-	//}
-	//n_0 := NewNode(self.cans[:self.splitID+1])
-	//if self.par!= nil{
-	//	self.isF = self.par.add_1(n_0)
-	//}
-	//if self.last != nil {
-	//	if (self.last.Diff()>0) == (n_0.Diff()>0){
-	//		self.last = NewNode(append(self.last.Eles,n_0.Eles[1:]...))
-	//	}else{
-	//		self.last = n_0
-	//	}
-	//}else{
-	//	self.last = n_0
-	//}
-	//self.cans = self.cans[self.splitID:]
-	////self.cans = n_1.Eles
-
-	//o = true
-	//C:=self.cans[0]
-	//var diffAbs,maxAbs,diff float64
-	//for i,c_ := range self.cans[1:]{
-	//	diff = c_.Val() - C.Val()
-	//	diffAbs = math.Abs(diff)
-	//	if diffAbs > maxAbs {
-	//		self.splitID = i+1
-	//		self.direction = diff
-	//		maxAbs = diffAbs
-	//	}
-	//}
-	//self.splitID_old = self.splitID
-
-	//if self.tag == 0 {
-	//	return
-	//}
-
-	//if self.isF  {
-	//	fmt.Println("-------")
-	//	//&& self.par.direction != 0{
-	//	//if self.tem == nil {
-	//	//	self.getTemplate(self.par.direction>0)
-	//	//}
-	//}
-	//n_2 := NewNode(self.cans)
-	//fmt.Printf(
-	//	"%d %5d %10.2f %5d %5d %10.2f %5d %10.2f %10.2f\r\n",
-	//	self.tag,
-	//	len(self.par.cans),
-	//	self.par.direction,
-	//	len(n_0.Eles),
-	//	n_0.Dur(),
-	//	n_0.Diff(),
-	//	len(self.cans),
-	//	self.direction,
-	//	//n1.Val(),
-	//	n_0.Val(),
-	//	//n_2.Val() - n_0.Val(),
-	//)
+	if !U {
+		return
+	}
+	var sum,dur,t float64
+	for _,_c := range self.cans {
+		t = float64(_c.Dur())
+		//sum += math.Abs(_c.Diff())
+		sum += ((_c.Max() - _c.Min()) + math.Abs(_c.Diff())) * t
+		dur += t
+	}
+	sum = sum/dur
+	if math.Abs(self.direction)>sum &&
+	(self.par.direction>0) != (self.direction>0) {
+		fmt.Printf("%d %6d %10.2f %10.2f %10.2f\r\n",self.tag,len(self.cans),self.par.direction,self.direction,sum)
+	}
 	return
+
 }
 func (self *Layer)setSplitID(){
+
+	self.cans = self.cans[self.splitID:]
 	C:=self.cans[0]
 	var diffAbs,maxAbs,diff float64
 	self.splitID = 0
+	self.direction = 0
 	for i,c_ := range self.cans[1:]{
 		diff = c_.Val() - C.Val()
 		diffAbs = math.Abs(diff)
@@ -412,9 +420,10 @@ func (self *Layer)setSplitID(){
 func (self *Layer) Split(c Element,hand func(*Node,bool)){
 	n1 := NewNode(self.cans)
 	if ((n1.Diff()<0) == (c.Val() > n1.Val())) {
+		//fmt.Println(self.splitID,len(self.cans))
 		np := NewNode(self.cans[:self.splitID+1])
-		hand(np,self.addPar(np))
-		self.cans = self.cans[self.splitID:]
+		hand(np,self.addPar_1(np))
+		//self.cans = self.cans[self.splitID:]
 		self.setSplitID()
 		return
 	}
@@ -426,19 +435,19 @@ func (self *Layer) Split(c Element,hand func(*Node,bool)){
 		return
 	}
 	np := NewNode(self.cans[:self.splitID+1])
-	hand(np,self.addPar(np))
-	self.cans = self.cans[self.splitID:]
+	hand(np,self.addPar_1(np))
+	//self.cans = self.cans[self.splitID:]
 	self.setSplitID()
 
 	np = NewNode(self.cans[:self.splitID+1])
-	hand(np,self.addPar(np))
-	self.cans = self.cans[self.splitID:]
+	hand(np,self.addPar_1(np))
+	//self.cans = self.cans[self.splitID:]
 	self.setSplitID()
 
 
 }
 
-func (self *Layer)addPar(c Element) bool{
+func (self *Layer)addPar_1(c Element) bool{
 	if self.par == nil {
 		self.setPar()
 		if self.par == nil {
