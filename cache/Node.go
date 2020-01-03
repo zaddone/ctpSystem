@@ -10,7 +10,7 @@ type Element interface{
 	Time() int64
 	LastTime() int64
 	Dur() int64
-	Each(func(Element)error) error
+	Each(bool,func(Element)error) error
 	Name() string
 	Max() float64
 	Min() float64
@@ -25,14 +25,14 @@ type Node struct {
 	LastTime_ int64
 	Dur_ int64
 }
-func MergeElement(a,b Element) (c *Node) {
+func MergeElement(a,b Element,in bool) (c *Node) {
 
 	var eles []Element
-	a.Each(func(c_ Element)error{
+	a.Each(in,func(c_ Element)error{
 		eles = append(eles,c_)
 		return nil
 	})
-	b.Each(func(c_ Element)error{
+	b.Each(in,func(c_ Element)error{
 		eles = append(eles,c_)
 		return nil
 	})
@@ -92,16 +92,20 @@ func (self *Node) Name() (n string){
 	//return
 }
 
-func (self *Node) Each(fn func(Element)error)error{
+func (self *Node) Each(in bool, fn func(Element)error)(err error){
 
 	//fn(self)
 	for _,e := range self.Eles {
-		err := e.Each(fn)
+		if !in{
+			err = fn(e)
+		}else{
+			err = e.Each(in,fn)
+		}
 		if err != nil {
 			return err
 		}
 	}
-	return nil
+	return
 
 }
 func (self *Node)Val() float64{

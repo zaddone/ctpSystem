@@ -58,7 +58,7 @@ func (self *Candle) GetLowerLimitPrice() float64 {
 func (self *Candle) Name() string{
 	return self.ins
 }
-func (self *Candle) Each(fn func(e Element)error)error{
+func (self *Candle) Each(in bool,fn func(e Element)error)error{
 	return fn(self)
 }
 func (self *Candle) Time() int64 {
