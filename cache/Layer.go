@@ -315,17 +315,24 @@ func (self *Layer) add(c Element) (o bool) {
 			self.addPar(NewNode(self.cans))
 			self.cans = nil
 		}
+
 		self.splitID = 0
 		return
 	}
 	c = self.addCans(c)
-	if len(self.cans) == 1 {
-		return
-	}
+	//if l != c {
+	//	return
+	//}
+	//if len(self.cans) == 1 {
+	//	return
+	//}
 	d := c.Val() - self.cans[0].Val()
 	if math.Abs(d) >= math.Abs(self.direction){
 		self.direction = d
 		self.splitID = len(self.cans)-1
+		return
+	}
+	if (self.splitID+1) == len(self.cans){
 		return
 	}
 
@@ -336,8 +343,17 @@ func (self *Layer) add(c Element) (o bool) {
 	o = true
 	if self.addPar(NewNode(self.cans[:self.splitID+1])){
 		self.setSplitID()
-		n1 := NewNode(self.par.cans)
-		fmt.Printf("%d %10d %10d %10.2f %10.2f %10d %10d %10d\r\n",
+
+	}else{
+		self.setSplitID()
+	}
+
+
+	if self.direction != 0 {
+		return
+	}
+	n1 := NewNode(self.par.cans)
+	fmt.Printf("%d %10d %10d %10.2f %10.2f %10d %10d %10d\r\n",
 		self.par.tag,
 		n1.Dur(),
 		len(n1.Eles),
@@ -346,10 +362,7 @@ func (self *Layer) add(c Element) (o bool) {
 		len(n0.Eles),
 		self.splitID,
 		len(self.cans),
-		)
-	}else{
-		self.setSplitID()
-	}
+	)
 	return
 
 }
@@ -365,10 +378,14 @@ func (self *Layer)addPar(c Element) bool{
 
 func (self *Layer)setSplitID(){
 	self.cans = self.cans[self.splitID:]
-	C:=self.cans[0]
-	var diffAbs,maxAbs,diff float64
 	self.splitID = 0
 	self.direction = 0
+	if len(self.cans) == 1 {
+		fmt.Println("------")
+		return
+	}
+	C:=self.cans[0]
+	var diffAbs,maxAbs,diff float64
 	for i,c_ := range self.cans[1:]{
 		diff = c_.Val() - C.Val()
 		diffAbs = math.Abs(diff)
