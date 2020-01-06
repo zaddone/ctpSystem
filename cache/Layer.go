@@ -26,6 +26,7 @@ type Temple struct{
 func (self *Temple) SetStats(){
 	self.Stats++
 }
+
 type Layer struct{
 	cans []Element
 	direction float64
@@ -48,40 +49,7 @@ type Layer struct{
 	level_2 float64
 
 }
-func (self *Layer) getSum() {
 
-	self.parSum = 0
-	self.parCov = 0
-	if self.par == nil {
-		return
-	}
-	if self.par.direction == 0 {
-		return
-	}
-	//if self.parCov != 0 {
-	//	return self.parCov
-	//}
-	dis := self.direction>0
-	var dur,d,f float64
-	var cs  []float64
-	for _,c := range self.par.cans {
-		if c.Diff()<0 == dis {
-			continue
-		}
-		d = float64(c.Dur())
-		dur += d
-		f = math.Abs(c.Diff())
-		self.parSum += f*d
-		cs = append(cs,f)
-	}
-	self.parSum /= dur
-	for _,c := range cs {
-		self.parCov += math.Pow(self.parSum - c,2)
-	}
-	self.parCov =math.Sqrt(self.parCov/float64(len(cs)))
-	//fmt.Println(self.tag,self.parCov,self.parSum,len(cs),self.direction,self.par.direction)
-
-}
 
 func NewLayer(ca *Cache) (L *Layer) {
 	L = &Layer{
